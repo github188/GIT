@@ -1,5 +1,0 @@
-Git is a distributed version control system.
-Git is free software distributed under the GPL.
-Git is wonderful.
-Git has a mutable index called stage.
-GUN nano 2.0.6
