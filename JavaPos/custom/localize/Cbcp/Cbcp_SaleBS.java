@@ -26,6 +26,7 @@ import com.efuture.javaPos.Global.Language;
 import com.efuture.javaPos.Global.LoadSysInfo;
 import com.efuture.javaPos.Global.SellType;
 import com.efuture.javaPos.Logic.HykInfoQueryBS;
+import com.efuture.javaPos.Payment.Payment;
 import com.efuture.javaPos.PrintTemplate.CheckGoodsMode;
 import com.efuture.javaPos.PrintTemplate.YyySaleBillMode;
 import com.efuture.javaPos.Struct.CustomerDef;
@@ -1708,5 +1709,24 @@ public class Cbcp_SaleBS extends Cbcp_THHNew_SaleBS//Cbbh_THH_SaleBS
 		}
 		
 		return super.payAccount(mode, money);
+	}
+	
+	public boolean readBrokenData()
+	{
+		if(super.readBrokenData())
+		{
+			int i;
+			for (i = 0; i < payAssistant.size(); ++ i)
+			{
+				Payment p = (Payment) payAssistant.elementAt(i);
+				
+				if(p == null) return true;
+				
+				p.saleBS = this;
+			}
+			return true;
+		}
+		
+		return false;
 	}
 }

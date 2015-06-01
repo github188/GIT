@@ -76,9 +76,10 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 				new MessageBox("退货时不能使用" + paymode.name);
 				return null;
 			}
-
-	//初始化商品的微信券标志
+			
+			//初始化商品的微信券标志
 			if(!isPaymentExist()) setCommodFree();
+			
 			// 先检查是否有冲正未发送
 			if (!sendAccountCz())
 				return null;
@@ -97,7 +98,7 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 		return null;
 	}
 	
-		//初始化商品的微信券标志
+	
 	public boolean isPaymentExist()
 	{
 		int i;
@@ -315,7 +316,6 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 			mzkreq.mktcode = mkt;
 		}
 		
-		
 		if (!SellType.ISSALE(salehead.djlb)) {
 			mzkreq.fphm = Convert.toLong(salehead.yfphm);
 			mzkreq.syyh = salehead.str7;
@@ -336,30 +336,13 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 
 	protected void saveAccountMzkResultToSalePay()
 	{
-		if(!CommonMethod.isNull(mzkreq.type) && mzkreq.type.equals("RULEPAY"))
-		{
-			//把参与的商品打上已经使用标记
-			markCommods(Cbcp_WCCRuleDef.WCC_CALC_MARK_MATCH + wcc_couponno,Cbcp_WCCRuleDef.WCC_CALC_MARK_USED + wcc_couponno);
-						
-			salepay.ybje = Double.parseDouble(saleBS.getPayMoneyByPrecision(wcc_value, paymode));
-			salepay.je = ManipulatePrecision.doubleConvert(salepay.ybje * salepay.hl, 2, 1);
-			//salepay.payno = String.valueOf(req.seqno);	  //记录当前交易号
-			//salepay.memo = mzkreq.track2;				  //记录当前的券号
-			
-			salepay.idno = String.valueOf(wcc_rule.seqno);//记录当前规则流水
-			
-			if(saleBS.saleHead.hykh == null || saleBS.saleHead.hykh.isEmpty())
-			{	
-				saleBS.saleHead.hykh = wcc_cardno;
-				saleBS.saleEvent.setVIPInfo(wcc_billno);
-			}
-		}
+		salepay.str1 = mzkret.str1;
+		salepay.str2 = mzkret.str2;
+		salepay.str3 = mzkret.str3;
+		salepay.str4 = mzkret.str4;
 
 		salepay.payno = String.valueOf(mzkreq.seqno);	  		//记录当前交易号
-		salepay.memo = mzkreq.track2;				  		//记录当前的券号
-
-		//记录断点
-		this.saleBS.writeBrokenData();
+		salepay.memo = mzkreq.track2;				  			//记录当前的券号		
 	}
 	
 	public String generateUrlParameters(MzkRequestDef req, MzkResultDef ret,String key,String id,String extend)
@@ -401,9 +384,12 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 				sb.append(signs[j]);
 			}
 		}
-	
+		PosLog.getLog(this.getClass()).info(ManipulateDateTime.getCurrentTime() + "[para]="+ sb.toString());
 		String sign = Md5Tools.GetMD5Code(sb.toString() + key);
-		System.out.println(sign);
+		PosLog.getLog(this.getClass()).info(ManipulateDateTime.getCurrentTime() + "[key]=" + key);
+		PosLog.getLog(this.getClass()).info(ManipulateDateTime.getCurrentTime() + "[sign]="+ sign);
+		System.out.println("[key]="+key);
+		System.out.println("[sign]="+sign);
 		
 		sb = new StringBuffer();
 		for (int j = 0; j < urlpara.length; j++) {
@@ -441,15 +427,20 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 
 			// 检验状态码，如果成功接收数据
 			int code = response.getStatusLine().getStatusCode();
+			para.delete(0, para.length());
 			if (code == 200) 
 			{
-				para.delete(0, para.length());
 				para.append(EntityUtils.toString(response.getEntity()));
 			}
+			
 		} catch (UnsupportedEncodingException e) {
+			para.delete(0, para.length());
 			e.printStackTrace();
+			return false;
 		} catch (IOException e) {
+			para.delete(0, para.length());
 			e.printStackTrace();
+			return false;
 		}
 		
 		return true;
@@ -469,7 +460,7 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 		{
 			extend = id;
 			id = req.track2;
-			req.track2 = "0";
+//			req.track2 = "0";
 			if((req.str2 !=null && req.str2.length() > 0) && (req.str3 != null && req.str3.length() > 0))
 			{
 				req.str1 = req.str3;
@@ -532,8 +523,9 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 						System.out.println(xmldata);
 						if (xmldata1[0].equals("F")) 
 						{	
-	//删除当前的冲正
-	deleteMzkCz();
+							//删除当前的冲正
+							deleteMzkCz();
+							
 							new MessageBox(xmldata1[1]);
 							
 							bld.retcode = "99";
@@ -541,8 +533,8 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 
 							if(!CommonMethod.isNull(req.type) && req.type.equals("RULEPAY"))
 							{
-	//取消用券的商品
-								markCommods(wcc_rule,Cbcp_WCCRuleDef.WCC_CALC_MARK_MATCH + wcc_couponno,Cbcp_WCCRuleDef.WCC_CALC_MARK_FREE);
+								//取消用券的商品
+								markCommods(wcc_rule,Cbcp_WCCRuleDef.WCC_CALC_MARK_MATCH + wcc_couponno,Cbcp_WCCRuleDef.WCC_CALC_MARK_FREE);								
 							}
 							
 							retcode = false;
@@ -556,14 +548,19 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 								bld.retcode = "00";
 								bld.retmsg = Language.apply("交易成功");
 
-								if(!CommonMethod.isNull(mzkreq.type) && mzkreq.type.equals("RULEPAY"))
-								{
-									mzkret.str2 = splits[1].toString();//payrules 
-									mzkret.str3 = splits[2].toString();//paychannels 
-	//把参与的商品打上已经使用标记
-									calcCommodJeFree(Cbcp_WCCRuleDef.WCC_CALC_MARK_MATCH + wcc_couponno);
-									markCommods(wcc_rule,Cbcp_WCCRuleDef.WCC_CALC_MARK_MATCH + wcc_couponno,Cbcp_WCCRuleDef.WCC_CALC_MARK_USED + wcc_couponno);
+//								if(!CommonMethod.isNull(mzkreq.type) && mzkreq.type.equals("RULEPAY"))
+//								{									
+//									mzkret.str2 = splits[1].toString();//payrules 
+//									mzkret.str3 = splits[2].toString();//paychannels 
+//									mzkret.str4 = getPaycodeFromChannels(mzkret.str3);									
+//								}
+								if(splits.length > 1) mzkret.str2 = splits[1].toString();//payrules 
+								if(splits.length > 2)
+								{	
+									mzkret.str3 = splits[2].toString();//payrules 
+									mzkret.str4 = getPaycodeFromChannels(mzkret.str3);									
 								}
+
 								
 								retcode = true;								
 							}
@@ -606,7 +603,7 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 											//当前券号
 											wcc_couponno = mzkreq.track2;
 											
-										if(rulesISMatchNew())
+											if(rulesISMatchNew())
 											{
 												req.type = "RULEPAY";
 												
@@ -614,6 +611,10 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 												if(wcc_value < req.je)
 												{	
 													req.je = wcc_value;
+												}
+												else
+												{
+													 wcc_value = req.je;
 												}
 												
 												bld.retcode = "03";
@@ -1253,17 +1254,27 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 				text = p_element.elementText("channels_count");
 				xmlstr += (text == null ? "":text) + ";";
 			
-				List channels = p_element.elements("channel");
-				for(Iterator it = channels.iterator();it.hasNext();)
-				{
-					text = ((Element)it.next()).elementText("name");
-					xmlstr += (text == null ? "":text) + ":";
-					text = ((Element)it.next()).elementText("mode");
-					xmlstr += (text == null ? "":text) + ":";
-					text = ((Element)it.next()).elementText("no");
-					xmlstr += (text == null ? "":text) + ":";
-					text = ((Element)it.next()).elementText("fee");
-					xmlstr += (text == null ? "":text) + ",";
+				p_element = p_element.element("channels");
+				
+				if(p_element != null)
+				{	
+					List channels = p_element.elements("channel");
+					for(Iterator it = channels.iterator();it.hasNext();)
+					{
+						p_element = (Element)it.next();
+						text = p_element.elementText("name");
+						xmlstr += (text == null ? "":text) + ":";
+						text = p_element.elementText("mode");
+						xmlstr += (text == null ? "":text) + ":";
+						text = p_element.elementText("no");
+						xmlstr += (text == null ? "":text) + ":";
+						text = p_element.elementText("fee");
+						xmlstr += (text == null ? "":text) + ",";
+					}
+				}
+				else
+				{	
+					xmlstr += " :::,";
 				}
 			}
 			else
@@ -1271,7 +1282,7 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 				xmlstr += " ; ; ; ;";
 			}
 			
-			xmlstr.substring(0, xmlstr.length() - 1);
+			xmlstr = xmlstr.substring(0, xmlstr.length() - 1);
 
 		} else {
 			String error = element.elementTextTrim("error");
@@ -1281,6 +1292,30 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 		return xmlstr;
 	}
 
+	
+	public String getPaycodeFromChannels(String channels)
+	{
+		String text = null;
+		String[] values = channels.split(";"); 
+		
+		if(values.length > 4) 
+		{	
+			text = values[4].toString();
+			if(text != null && text.length() > 0)
+			{
+				values = text.split(":");
+				if(values.length > 3) 
+				{
+					//mode
+					text = values[1].toString();
+					if(text != null && text.length() > 0) return text;
+				}
+			}
+		}
+
+		return "";
+	}
+	
 	public String getDisplayStatusInfo() {
 		// yinliang test
 		// mzkret.func = "Y01Y";
@@ -1603,26 +1638,45 @@ public class Cbcp_PaymentZfb extends Bcrm_PaymentMzk {
 		
 		if(super.createSalePay(money))
 		{
-			//salepay.num2 = 元宝金额
-			if(salepay.num2 > 0 && (salepay.ybje > 0 && salepay.je > 0))//元宝，支付宝同时扣款
+			if(!CommonMethod.isNull(mzkreq.type) && mzkreq.type.equals("RULEPAY"))
 			{
-				PayModeDef  payModeDef  = DataService.getDefault().searchPayMode("7505");
-				saleBS.payAccount(payModeDef,String.valueOf(salepay.num2));
-			}
-			else if(salepay.num2 > 0 &&  (salepay.ybje <= 0 && salepay.je <= 0))//元宝支付
-			{
-				PayModeDef  payModeDef  = DataService.getDefault().searchPayMode("7505");
-				salepay.payname = payModeDef.name;
-				salepay.paycode = payModeDef.code;
-				salepay.ybje =salepay.num2;
+				//把参与的商品打上已经使用标记
+				calcCommodJeFree(Cbcp_WCCRuleDef.WCC_CALC_MARK_MATCH + wcc_couponno);
+				markCommods(wcc_rule,Cbcp_WCCRuleDef.WCC_CALC_MARK_MATCH + wcc_couponno,Cbcp_WCCRuleDef.WCC_CALC_MARK_USED + wcc_couponno);
+							
+				salepay.ybje = Double.parseDouble(saleBS.getPayMoneyByPrecision(wcc_value, paymode));
 				salepay.je = ManipulatePrecision.doubleConvert(salepay.ybje * salepay.hl, 2, 1);
-				salepay.payno="";
+								
+				salepay.idno = String.valueOf(wcc_rule.seqno);//记录当前规则流水			
+
+				//如果当前交易产生了会员卡号
+				if(CommonMethod.isNull(saleBS.saleHead.hykh) && !CommonMethod.isNull(wcc_cardno))
+				{	
+					salepay.str6 = wcc_cardno;
+					saleBS.saleHead.hykh = wcc_cardno;
+					saleBS.saleEvent.setVIPInfo(wcc_cardno);
+				}
 			}
+			
+			//刷新付款方式
+			if(!CommonMethod.isNull(salepay.str4))
+			{
+				PayModeDef  payModeDef  = DataService.getDefault().searchPayMode(salepay.str4);
+				if(payModeDef != null)
+				{	
+					salepay.paycode = payModeDef.code;
+					salepay.payname = payModeDef.name;				
+				}
+			}
+			
+			//记录断点
+			saleBS.writeBrokenData();
+			return true;
 		}
-		return true;
+		return false;
 	}
 	
-public boolean parseRetRule(String rule)
+	public boolean parseRetRule(String rule)
 	{
 		if(rule == null || rule.isEmpty()) return false;
 		
@@ -1648,9 +1702,7 @@ public boolean parseRetRule(String rule)
 		}
 		
 		return true;
-		
 	}
-
 	
 	public void parseChannels(String channels)
 	{
@@ -1673,8 +1725,9 @@ public boolean parseRetRule(String rule)
 	{
 		int i,j,k;
 		double je,zje;
-		//Cbbh_WCCRuleDef rule = null;
-	SaleGoodsDef commod = null;
+		
+		SaleGoodsDef commod = null;
+		
 		for(i = 0; i < wcc_rules.size() ; ++ i)
 		{
 			zje = 0;
@@ -1705,9 +1758,10 @@ public boolean parseRetRule(String rule)
 						if(k < wcc_rules.size()) continue; 
 					}
 					
-				commod = ((SaleGoodsDef)(saleBS.saleGoods.elementAt(j)));
-				je = commod.hjje - commod.hjzk;					//判断单个商品是否满足规则
-	//判断单个商品是否满足规则
+					commod = ((SaleGoodsDef)(saleBS.saleGoods.elementAt(j)));
+					je = commod.hjje - commod.hjzk;
+					
+					//判断单个商品是否满足规则
 					if(je >= wcc_rule.value)
 					{ 
 						markCommod(wcc_rule,j,Cbcp_WCCRuleDef.WCC_CALC_MARK_MATCH + wcc_couponno);
@@ -1738,7 +1792,7 @@ public boolean parseRetRule(String rule)
 		wcc_rule = null;
 		return false;
 	}
-	
+			
 	//判断规则是否匹配
 	public boolean rulesISMatchNew()
 	{
@@ -1883,12 +1937,13 @@ public boolean parseRetRule(String rule)
 				}
 				else
 				{
-					sp.num1 = 0;
 					je -= sp.num1;
+					sp.num1 = 0;
 				}
 			}
 		}
 	}
+	
 	public boolean commodISUsed(String mode,int index)
 	{
 		SpareInfoDef sp = (SpareInfoDef)this.saleBS.goodsSpare.elementAt(index);
@@ -2003,6 +2058,12 @@ public boolean parseRetRule(String rule)
 				if(couponno != null && couponno.equals(salepay.memo)) 
 					sp.memo3 = Cbcp_WCCRuleDef.WCC_CALC_MARK_FREE;
 			}
+		}
+		
+		if(!CommonMethod.isNull(salepay.str6) && !CommonMethod.isNull(saleBS.saleHead.hykh) && salepay.str6.equals(saleBS.saleHead.hykh))
+		{
+			saleBS.saleHead.hykh = "";
+			saleBS.saleEvent.setVIPInfo(saleBS.saleHead.hykh);
 		}
 	}
 }

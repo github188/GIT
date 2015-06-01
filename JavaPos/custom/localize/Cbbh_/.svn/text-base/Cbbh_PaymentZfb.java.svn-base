@@ -1,0 +1,825 @@
+package custom.localize.Cbbh;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
+import org.eclipse.swt.events.KeyEvent;
+
+import bankpay.alipay.tools.Md5Tools;
+
+import com.efuture.DeBugTools.PosLog;
+import com.efuture.commonKit.CommonMethod;
+import com.efuture.commonKit.Convert;
+import com.efuture.commonKit.ManipulateDateTime;
+import com.efuture.commonKit.ManipulatePrecision;
+import com.efuture.commonKit.MessageBox;
+import com.efuture.javaPos.Device.NewKeyListener;
+import com.efuture.javaPos.Global.AccessDayDB;
+import com.efuture.javaPos.Global.ConfigClass;
+import com.efuture.javaPos.Global.DataService;
+import com.efuture.javaPos.Global.GlobalInfo;
+import com.efuture.javaPos.Global.GlobalVar;
+import com.efuture.javaPos.Global.Language;
+import com.efuture.javaPos.Global.SellType;
+import com.efuture.javaPos.Global.StatusType;
+import com.efuture.javaPos.Struct.BankLogDef;
+import com.efuture.javaPos.Struct.MzkRequestDef;
+import com.efuture.javaPos.Struct.MzkResultDef;
+import com.efuture.javaPos.Struct.PayModeDef;
+import com.efuture.javaPos.Struct.SalePayDef;
+
+import custom.localize.Bcrm.Bcrm_PaymentMzk;
+
+public class Cbbh_PaymentZfb extends Bcrm_PaymentMzk {
+
+	boolean flag = true;
+
+	public SalePayDef inputPay(String money) {
+		try {
+			mzkreq.je = Convert.toDouble(money);
+			saleBS.saleHead.num3 = Convert.toDouble(money);
+			// 退货小票不能使用,退货扣回按销售算
+			if (checkMzkIsBackMoney() && GlobalInfo.sysPara.thmzk != 'Y') {
+				new MessageBox("退货时不能使用" + paymode.name);
+				return null;
+			}
+
+			// 先检查是否有冲正未发送
+			if (!sendAccountCz())
+				return null;
+
+			// 打开明细输入窗口
+			new Cbbh_PaymentZfbForm().open(this, saleBS);
+
+			// 如果付款成功,则salepay已在窗口中生成
+			return salepay;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		return null;
+	}
+
+	public boolean realAccountPay() {
+//		if (GlobalInfo.sysPara.cardrealpay == 'Y') {
+			// 付款即时记账
+			if (mzkAccount(true)) {
+				deleteMzkCz();
+				saveFindMzkResultToSalePay();
+				return true;
+			} else {
+				return false;
+			}
+//		} else {
+//			// 不即时记账
+//			return true;
+//		}
+	}
+
+	public boolean findMzk(String track1, String track2, String track3) {
+
+		// 设置请求数据
+		setRequestDataByFind(track1, track2, track3);
+		if (!SellType.ISSALE(saleBS.saletype) && mzkreq.type.length()>0)
+		{
+			return mzkAccount(true);
+		}
+		return true;
+		// return true;//(mzkreq,mzkret);
+	}
+
+	public boolean mzkAccount(boolean isAccount) {
+		do {
+			// 退货交易卡号为空时提示刷卡
+			paynoMsrflag = false;
+			if (!paynoMSR())
+				return false;
+
+			// 设置交易类型,isAccount=true是记账,false是撤销
+			if (isAccount) {
+				if (SellType.ISSALE(saleBS.saletype))
+					mzkreq.type = "PAY"; // 消费,减
+				else
+					mzkreq.type = "REFUND"; // 退货,加
+			}
+
+			// 保存交易数据进行交易
+			if (!setRequestDataByAccount()) {
+				if (paynoMsrflag) {
+					salepay.payno = "";
+					continue;
+				}
+				return false;
+			}
+
+			// 记录面值卡交易日志
+			// BankLogDef bld = mzkAccountLog(false, null, mzkreq, mzkret);
+
+			/*
+			 * mzkreq.type = "PAY"; mzkreq.seqno =
+			 * Convert.toLong("635443116578347718"); mzkreq.termno =
+			 * ConfigClass.CashRegisterCode; mzkreq.mktcode = "0001";
+			 * mzkreq.syyh = GlobalInfo.posLogin.gh; mzkreq.syjh = "0608";
+			 * mzkreq.fphm = 3; mzkreq.invdjlb = ((salehead != null) ?
+			 * salehead.djlb : ""); mzkreq.paycode = ((paymode != null) ?
+			 * paymode.code : ""); mzkreq.je = 0.02; mzkreq.track2 =
+			 * "284091807938704871"; mzkreq.str1 =
+			 * ManipulateDateTime.getCurrentDate().replaceAll("/","");
+			 */
+			// 发送交易请求
+			if (!sendMzkSale(mzkreq, mzkret)) {
+				if (paynoMsrflag) {
+					salepay.payno = "";
+					continue;
+				}
+				return false;
+			}
+			
+
+
+			/*// 先写冲正文件
+			if (!writeMzkCz()) {
+				if (paynoMsrflag) {
+					salepay.payno = "";
+					continue;
+				}
+				return false;
+			}*/
+
+			// 记录应答信息, batch标记本付款方式已记账,这很重要
+			// saveAccountMzkResultToSalePay();
+
+			// 记账完成操作,可用于记录记账日志或其他操作
+			// return mzkAccountFinish(isAccount, bld);
+			return true;
+		} while (true);
+	}
+
+	public void setRequestDataByFind(String track1, String track2, String track3) {
+
+		// 得到消费序号
+		long seqno = getMzkSeqno();
+		if (seqno <= 0)
+			return;
+		// 根据磁道生成查询请求包
+
+		mzkreq.type = "";
+		mzkreq.seqno = seqno;
+		mzkreq.termno = ConfigClass.CashRegisterCode;
+		mzkreq.mktcode = GlobalInfo.sysPara.mktcode;
+		mzkreq.syyh = GlobalInfo.posLogin.gh;
+		mzkreq.syjh = ConfigClass.CashRegisterCode;
+		mzkreq.fphm = GlobalInfo.syjStatus.fphm;
+		mzkreq.invdjlb = ((salehead != null) ? salehead.djlb : "");
+		mzkreq.paycode = ((paymode != null) ? paymode.code : "");
+		// mzkreq.je = 0;
+		mzkreq.track1 = track1;
+		mzkreq.track2 = track2;
+		mzkreq.track3 = track3;
+		mzkreq.passwd = "";
+		mzkreq.memo = "";
+		mzkreq.str1 = ManipulateDateTime.getCurrentDate().replaceAll("/", "");
+	}
+
+	// 保存交易数据进行交易
+	protected boolean setRequestDataByAccount() {
+		// 得到消费序号
+		long seqno = getMzkSeqno();
+		if (seqno <= 0)
+			return false;
+
+		// 打消费交易包
+		mzkreq.seqno = seqno;
+		// mzkreq.je = salepay.ybje;
+		mzkreq.syjh = ConfigClass.CashRegisterCode;
+		mzkreq.mktcode = GlobalInfo.sysPara.mktcode;
+		if (!SellType.ISSALE(saleBS.saletype)) {
+			mzkreq.fphm = Convert.toLong(salehead.str8);
+			mzkreq.syyh = salehead.str7;
+		} else {
+			mzkreq.fphm = GlobalInfo.syjStatus.fphm;
+			mzkreq.syyh = GlobalInfo.posLogin.gh;
+		}
+		// mzkreq.paycode = salepay.paycode;
+		mzkreq.invdjlb = ((salehead != null) ? salehead.djlb : "");
+
+		// 告诉后台过程磁道信息是存放的是卡号,只采用卡号记账方式,不使用磁道记账方式
+		mzkreq.track1 = "CARDNO";
+		// mzkreq.track2 = salepay.payno;
+		mzkreq.str1 = ManipulateDateTime.getCurrentDate().replaceAll("/", "");
+		return true;
+	}
+
+	public boolean sendMzkSale(MzkRequestDef req, MzkResultDef ret) {
+
+		// SEARCH：查询
+		// PAY：下单
+		// CANCEL：撤消/冲正
+		// REFUND : 退款
+		String id = String.valueOf(req.seqno);//这里先把序号转换为string类型。退货时如果输入交易号退货前面为0赋值给long类型会有问题。
+		if(req.type.equals("REFUND"))
+		{
+			
+			id = req.track2;
+			if((req.str2 !=null &&req.str2.length() > 0) && (req.str3 != null &&req.str3.length() > 0))
+			{
+				req.str1 = req.str3;
+				req.syjh = req.str2;
+			}
+		}
+		
+		String[] signs = { "_input_charset=utf-8", "datestr=" + req.str1,
+				"dynamic_id=" + req.track2, "dynamic_id_type=barcode",
+				"invno=" + req.fphm, "market=" + req.mktcode,
+				"opertype=" + req.type, "posid=" + req.syjh,
+				"saleseqno=" + id,
+				"subcompany=" + GlobalInfo.sysPara.jygs, "total_fee=" + req.je
+
+		};
+
+		StringBuffer sb = new StringBuffer();
+		for (int j = 0; j < signs.length; j++) {
+			if (j == 0) {
+				sb.append(signs[j]);
+			} else {
+				sb.append("&");
+				sb.append(signs[j]);
+			}
+		}
+
+		Map mapN = new HashMap();
+		mapN = readZfbFile();
+		String key = mapN.get("key").toString();
+		String url = mapN.get("url").toString();
+
+		Md5Tools getMD5 = new Md5Tools();
+		String sign = getMD5.GetMD5Code(sb.toString() + key);
+
+		HttpPost httppost = new HttpPost(url);
+		String aliurl = sb.toString() + "&sign=" + sign + "&sign_type=MD5";
+		System.out.println(sign);
+		PosLog.getLog(this.getClass()).info(
+				ManipulateDateTime.getCurrentTime() + ":urlvalue【" + aliurl
+						+ "】");
+		StringEntity entity;
+		String bearXml = "";
+		try {
+			entity = new StringEntity(aliurl);
+
+			HttpClient httpclient = new DefaultHttpClient();
+			entity.setContentType("application/x-www-form-urlencoded");
+			httppost.setEntity(entity);
+
+			HttpResponse response;
+			response = httpclient.execute(httppost);
+
+			// 检验状态码，如果成功接收数据
+			int code = response.getStatusLine().getStatusCode();
+			if (code == 200) {
+				bearXml = EntityUtils.toString(response.getEntity());
+			}
+
+			PosLog.getLog(this.getClass()).info( 
+					ManipulateDateTime.getCurrentTime() + ":resultXml【"
+							+ bearXml + "】");
+
+			if (bearXml != null) {
+				// 获得阿里接口返回值
+				String xmldata = ResultData(bearXml);
+				// 消费demo
+				//String xmldata =
+				//"T;SUCCESS;total:0.01,actual:0.01,coupon:0,channels_count:1,channels:[{id:0,name:'ALIPAYACCOUNT',fee:0.01}];783075601,maxun518;781665550890156;a73449aae01b7955a93c987f4d9ffa03;MD5";
+				//"T;SUCCESS;total:3.1,actual:1.1,coupon:2,channels_count:2,channels:[{id:0,name:'ALIPAYACCOUNT',fee:1.1},{id:1,name:'JINYUANBAO',fee:2}];1014464840,15069082054a;869302006684048;ac1413a38720d94663b59ba85db0931d;MD5";
+				// 退货demo
+				// String xmldata =
+				// "T;SUCCESS;退款成功，金额为0;783075601,maxun518;;db619a4d4f6cbd67478462b5021dae52;MD5";
+				if (xmldata != null) {
+					String xmldata1[] = xmldata.split(";");
+					System.out.println(xmldata);
+					if (xmldata1[0].equals("F")) {
+						new MessageBox(xmldata1[1]);
+						return false;
+					} else if (xmldata1[0].equals("T")) {
+						if (xmldata1[1].equals("SUCCESS")) {
+
+							if(req.type != null && req.type.equals("CANCEL"))
+							{
+								return true;
+							}
+							else
+							{
+	//							成功先写冲正文件
+								if (!writeMzkCz()) {
+									return false;
+								}
+							}
+							
+							if(req.type != null && req.type.equals("REFUND"))
+							{
+								mzkret.cardno = String.valueOf(req.seqno);
+								new MessageBox(xmldata1[2]);
+								return true;
+							}
+						} else if (xmldata1[1].equals("WAITING")) {
+							while (true) {
+
+								/*try {
+									Thread.sleep(2000);
+								} catch (InterruptedException e) {
+									e.printStackTrace();
+								}*/
+								new MessageBox("等待顾客付款！");
+								mzkreq.type = "SEARCH";
+								return sendMzkSale(mzkreq, mzkret);
+							}
+						}
+						else if (xmldata1[1].equals("TRADE_NOT_ENABLE")) {
+							while (true) {
+
+							/*	try {
+									Thread.sleep(2000);
+								} catch (InterruptedException e) {
+									e.printStackTrace();
+								}*/
+								new MessageBox("等待2秒在查询！");
+								mzkreq.type = "SEARCH";
+								return sendMzkSale(mzkreq, mzkret);
+							}
+						}
+					}
+					
+//					mzkret.cardno = xmldata1[4];
+					mzkret.cardno = String.valueOf(req.seqno);
+//					mzkret.ye = Convert.toDouble(jsonList("{"+xmldata1[2]+"}","total").toString());
+//					mzkret.money = Convert.toDouble(jsonList("{"+xmldata1[2]+"}","actual").toString());
+					mzkret.str3 = jsonList("{"+xmldata1[2]+"}","channels").toString();
+					System.out.println(mzkret.str3);
+					StringBuffer sbmsg = new StringBuffer();
+					String[] para = {"name","fee"};
+					Map map = arrayJsontoMap(mzkret.str3,para);
+					for(int i =0;i<map.size();i++)
+					{
+						String[] mavalue = (String[]) map.get(i).toString().split(",");
+						if(mavalue[0].equals("JINYUANBAO"))
+						{
+							salepay.num2 = Convert.toDouble(mavalue[1]);
+//							salepay.ybje=0;
+//							salepay.je =0;
+							sbmsg.append("元宝支付金额："+mavalue[1]+"元\n");
+						}
+						else if(mavalue[0].equals("ALIPAYACCOUNT"))
+						{
+							salepay.ybje = Convert.toDouble(mavalue[1]);
+							salepay.je = ManipulatePrecision.doubleConvert(salepay.ybje * salepay.hl, 2, 1);
+							sbmsg.append("支付宝支付金额："+mavalue[1]+"元\n");
+						}
+//						salepay.num2 = 2;
+//						salepay.ybje=0;
+//						salepay.je =0;
+//						sbmsg.append("元宝支付金额："+salepay.num2+"元\n");
+//						salepay.ybje = 5;
+//						salepay.je = ManipulatePrecision.doubleConvert(salepay.ybje * salepay.hl, 2, 1);
+//						sbmsg.append("支付宝支付金额："+salepay.ybje+"元\n");
+						
+					}
+					new MessageBox(sbmsg.toString());
+					
+					return true;
+					
+				} else {
+					// new MessageBox("获取结果失败！");
+					return false;
+				}
+			} else {
+				return false;
+			}
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		// return DataService.getDefault().sendMzkSale(req,ret);
+		return false;
+	}
+
+	public HashMap readZfbFile() {
+		BufferedReader br = null;
+		String configName = GlobalVar.ConfigPath + "//CbbhZfb.ini";
+		String line = null;
+		Map map = new HashMap();
+		br = CommonMethod.readFile(configName);
+
+		try {
+			while ((line = br.readLine()) != null) {
+				String[] row = line.split("=");
+				if (row[0].trim().equals("key")) {
+					map.put("key", row[1].trim());
+				} else if (row[0].trim().equals("url")) {
+					map.put("url", row[1].trim());
+				}
+			}
+			return (HashMap) map;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// 解析返回xml字符串
+	public String ResultData(String xmlValue) {
+		// xmlValue="<?xml version='1.0'
+		// encoding='utf-8'?><pay><is_success>T</is_success><result_code>WAITING</result_code><result_des>下单并支付成功</result_des><buyer_user_id>2088302340390455</buyer_user_id><trade_no>2014012311001004450019518182</trade_no><sign>ab37a7c88e51f966422162c9fabcff43</sign><sign_type>MD5</sign_type></pay>";
+		// xmlValue="<?xml version='1.0'
+		// encoding='utf-8'?><pay><is_success>T</is_success><result_code>SUCCESS</result_code><result_des>total:0.01,actual:0.01,coupon:0,channels_count:1,channels:[{id:0,name:'ALIPAYACCOUNT',fee:0.01}]</result_des><buyer_user_id>783075601,maxun518</buyer_user_id><trade_no>783070412670156</trade_no><sign>689f102fa3f33a925e6ae565e97eec9d</sign><sign_type>MD5</sign_type></pay>";
+		String xmlstr = "";
+		Document document = null;
+		Element element = null;
+		try {
+			document = DocumentHelper.parseText(xmlValue);
+		} catch (DocumentException e) {
+			// TODO 自动生成 catch 块
+			e.printStackTrace();
+		}
+		element = document.getRootElement();
+
+		System.out.println("根节点：" + element.getName());
+
+		String is_success = element.elementTextTrim("is_success");
+		String result_code = element.elementTextTrim("result_code");
+		if (is_success.equals("T")) {
+			String result_des = element.elementTextTrim("result_des");
+			if (result_code.equals("FAIL"))
+				return "F;" + result_des;
+			String buyer_user_id = element.elementTextTrim("buyer_user_id");
+			String trade_no = element.elementTextTrim("trade_no");
+			String sign = element.elementTextTrim("sign");
+			String sign_type = element.elementTextTrim("sign_type");
+			System.out.println(is_success + ";" + result_code + ";"
+					+ result_des + ";" + buyer_user_id + ";" + trade_no + ";"
+					+ sign + ";" + sign_type);
+			xmlstr = is_success + ";" + result_code + ";" + result_des + ";"
+					+ buyer_user_id + ";" + trade_no + ";" + sign + ";"
+					+ sign_type;
+
+		} else {
+			String error = element.elementTextTrim("error");
+			xmlstr = is_success + ";" + error;
+		}
+
+		return xmlstr;
+	}
+
+	public String getDisplayStatusInfo() {
+		// yinliang test
+		// mzkret.func = "Y01Y";
+		// mzkret.value3 = 100;
+
+		try {
+			String line = "";
+			if (!checkMzkIsBackMoney()) {
+				// 如果卡有回收功能,显示回收提示
+				double ye = -1;
+				if (isRecycleType()) {
+					// 定义了回收功能键模式
+					if (NewKeyListener.searchKeyCode(GlobalVar.MzkRecycle) > 0) {
+						if (recycleStatus) {
+							ye = mzkret.ye;
+							line = "有效金额:"
+									+ ManipulatePrecision.doubleToString(ye)
+									+ " 元\n\n可用金额: "
+									+ ManipulatePrecision
+											.doubleToString(mzkret.ye) + " 元";
+						} else {
+							ye = mzkret.ye - mzkret.value3;
+							line = "有效金额:"
+									+ ManipulatePrecision.doubleToString(ye)
+									+ " 元\n\n可用金额: "
+									+ ManipulatePrecision
+											.doubleToString(mzkret.ye) + " 元";
+						}
+					} else {
+						ye = mzkret.ye;
+						line = "有效金额:" + ManipulatePrecision.doubleToString(ye)
+								+ " 元\n\n可用金额: "
+								+ ManipulatePrecision.doubleToString(mzkret.ye)
+								+ " 元";
+					}
+				}
+
+				/*
+				 * // 计算并显示付款限制 if (!this.allowpayjealready) this.allowpayje =
+				 * ManipulatePrecision.doubleConvert(calcPayRuleMaxMoney() /
+				 * paymode.hl); if (this.allowpayje >= 0 && ye >= 0)
+				 * this.allowpayje = Math.min(allowpayje,ye); else if (ye >= 0)
+				 * this.allowpayje = ye; if (this.allowpayje >= 0) {
+				 * this.allowpayje = Math.max(this.allowpayje,
+				 * saleBS.getDetailOverFlow(this.allowpayje)); String allowstr =
+				 * "付款限制:" + ManipulatePrecision.doubleToString(allowpayje) + "
+				 * 元"; if (line.length() > 0) line += "\n\n" + allowstr; else
+				 * line += allowstr; }
+				 */
+			} else {
+				if (mzkret.money > 0) {
+					line = "面值为:"
+							+ ManipulatePrecision.doubleToString(mzkret.money)
+							+ " 元\n\n退款后卡余额不能大于面值";
+				} else {
+					line = "";
+				}
+			}
+
+			// 显示面值卡返回的提示信息
+			if (mzkret.str3 != null && mzkret.str3.length() > 0) {
+				if (line.length() > 0)
+					line += "\n" + mzkret.str3;
+				else
+					line += mzkret.str3;
+			}
+
+			return line;
+		} catch (Exception er) {
+			er.printStackTrace();
+			return "";
+		}
+	}
+
+	protected String getDisplayAccountInfo() {
+		return "请 刷 卡";
+	}
+
+	protected boolean needFindAccount() {
+		return true;
+	}
+
+	public void specialDeal(Cbbh_PaymentZfbEvent event) {
+	}
+
+	public void setMoneyVisible(Cbbh_PaymentZfbEvent paymentMzkEvent) {
+
+	}
+
+	public void setPwdAndYe(Cbbh_PaymentZfbEvent event, KeyEvent e) {
+		if (!SellType.ISSALE(saleBS.saletype)) {
+			if (!flag) {
+				// 输入金额
+				if (e != null)
+					e.data = "focus";
+				event.moneyTxt.setFocus();
+				event.moneyTxt.selectAll();
+				return;
+			}
+			if (event.yeTips.getText().equals("原收银机")) {
+				event.yeTips.setText("原日期号");
+				event.yeTxt.setVisible(false);
+				event.pwdTxt.setVisible(true);
+				if (saleBS.saleHead.rqsj.length() <= 0) {
+					event.pwdTxt.setText(String.valueOf(ManipulateDateTime.getCurrentDate().replaceAll("/", "")));
+				} else {
+					event.pwdTxt.setText(saleBS.saleHead.rqsj.replaceAll("/","").substring(0,8));
+				}
+
+				mzkreq.str3 = event.pwdTxt.getText();
+				if (e != null)
+					e.data = "focus";
+				event.pwdTxt.setFocus();
+				event.pwdTxt.selectAll();
+				flag = false;
+			} else {
+
+				// 显示密码
+				event.yeTips.setText("原收银机");
+				event.yeTxt.setVisible(false);
+				event.pwdTxt.setVisible(true);
+				if (saleBS.saleHead.ysyjh.length() <= 0) {
+					event.pwdTxt.setText(salehead.syjh);
+				} else {
+					event.pwdTxt.setText(salehead.ysyjh);
+				}
+
+				mzkreq.str2 = event.pwdTxt.getText();
+				
+				if (e != null)
+					e.data = "focus";
+				event.pwdTxt.setFocus();
+				event.pwdTxt.selectAll();
+			}
+		} else {
+			// 显示余额
+			event.yeTips.setText("账户余额");
+			event.yeTxt.setVisible(true);
+			event.pwdTxt.setVisible(false);
+			event.yeTxt.setText(ManipulatePrecision
+					.doubleToString(getAccountYe()));
+
+			// 输入金额
+			if (e != null)
+				e.data = "focus";
+			event.moneyTxt.setFocus();
+			event.moneyTxt.selectAll();
+		}
+	}
+
+	public boolean checkMzkMoneyValid() {
+		try {
+			// 退货扣回付款时付款算消费
+			if (checkMzkIsBackMoney()) {
+				// 检查退款后余额是否大于卡面值
+				if (mzkret.money > 0 && mzkret.ye > mzkret.money) {
+					new MessageBox(Language.apply("退款余额不能超过面值!"));
+
+					return false;
+				}
+			} else {
+				/*
+				 * // 检查金额是否超过卡余额 if
+				 * (ManipulatePrecision.doubleCompare(salepay.ybje, mzkret.ye,
+				 * 2) > 0) { new MessageBox(Language.apply("卡内余额不足!"));
+				 * 
+				 * return false; }
+				 */
+
+				// 检查金额是否超过限制金额
+				if (this.allowpayje >= 0
+						&& ManipulatePrecision.doubleCompare(salepay.ybje,
+								this.allowpayje, 2) > 0) {
+					new MessageBox(Language.apply("输入金额超过允许支付限额!"));
+
+					return false;
+				}
+
+				// 判断是否是可回收的卡类型
+				if (!recycle()) {
+					return false;
+				}
+			}
+
+			return true;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+	}
+
+	public String GetMzkCzFile() {
+		if(mzkreq.type.equals("REFUND") || mzkreq.type.equals("CANCEL"))mzkreq.seqno = Convert.toLong(mzkreq.track2);
+		return ConfigClass.LocalDBPath + "/Zfb_" + mzkreq.seqno + ".cz";
+	}
+
+	public boolean sendAccountCzData(MzkRequestDef req, String czfile,
+			String czname) {
+		// 根据冲正文件的原交易类型转换冲正数据包
+ 		if (req.type.equals("PAY") || req.type.equals("REFUND")) {
+			req.type = "CANCEL"; // 消费冲正,加
+		} else {
+			new MessageBox(Language.apply("冲正文件的交易类型无效，请检查冲正文件"));
+			return false;
+		}
+
+		// 冲正记录
+		// String czmsg = "发起[" + czname + "]冲正:" + req.type + "," + req.fphm +
+		// "," + req.track2 + "," + ManipulatePrecision.doubleToString(req.je) +
+		// ",返回:";
+		String czmsg = Language.apply("发起") + "[" + czname + "]"
+				+ Language.apply("冲正:") + req.type + "," + req.fphm + ","
+				+ req.track2 + "," + ManipulatePrecision.doubleToString(req.je)
+				+ "," + Language.apply("返回:");
+
+		// 记录面值卡交易日志
+		BankLogDef bld = mzkAccountLog(false, null, req, null);
+
+		// 发送冲正交易
+		MzkResultDef ret = new MzkResultDef();
+
+		if (!sendMzkSale(req, ret)) {
+			// 记录日志表明发送过冲正数据
+			AccessDayDB.getDefault().writeWorkLog(czmsg + Language.apply("失败"),
+					StatusType.WORK_SENDERROR);
+
+			return false;
+		} else {
+			// 记录应答日志
+			mzkAccountLog(true, bld, req, ret);
+
+			// 记录日志表明发送过冲正数据
+			AccessDayDB.getDefault().writeWorkLog(czmsg + Language.apply("成功"),
+					StatusType.WORK_SENDERROR);
+
+			// 冲正发送成功,删除冲正文件
+			deleteMzkCz(czfile);
+			return true;
+		}
+	}
+
+	// true: 明码显示
+	// false: 密码显示
+	public boolean passwdMode() {
+		return true;
+	}
+
+	protected boolean saveFindMzkResultToSalePay() {
+		salepay.batch = "";
+		salepay.payno = mzkret.cardno;
+		salepay.kye = mzkret.ye;
+
+		return true;
+	}
+
+	public void doAfterFail(Cbbh_PaymentZfbEvent zfbEvent) {
+		zfbEvent.shell.close();
+		zfbEvent.shell.dispose();
+	}
+
+	// 自动计算付款金额,并生成付款方式
+	public boolean AutoCalcMoney() {
+		if (SellType.ISSALE(saleBS.saletype))
+			return true;
+		else
+			return false;
+	}
+
+	public void showAccountYeMsg() {
+
+	}
+
+	// 判断是否是支付宝
+	public boolean isCzFile(String filename) {
+		if (filename.startsWith("Zfb_") && filename.endsWith(".cz")) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	
+	public static Object jsonList(String jsonlist,String para){
+		
+		JSONObject objjson =  JSONObject.fromObject(jsonlist);
+		System.out.println(objjson.toString());
+		
+		Object obj = (Object) objjson.get(para);
+		
+		return obj;
+	}
+	
+	public static Map arrayJsontoMap(String jsonString,String[] para){
+		JSONArray array = JSONArray.fromObject(jsonString); 
+        Map map = new HashMap(); 
+		for(int i = 0; i < array.size(); i++){
+			 JSONArray jsonObject = JSONArray.fromObject(array.get(i)); 
+			JSONObject obj = (JSONObject)jsonObject.get(0);
+			Object keyvalue = "";
+			for (int j = 0; j < para.length; j++) {
+				String key = para[j];
+				keyvalue = keyvalue.toString() + (Object)obj.get(key)+",";
+			}
+
+			map.put(i, keyvalue);
+		} 
+		return map; 
+	}
+	
+	public boolean collectAccountClear()
+	{
+		return true;
+	}
+	
+	public boolean createSalePay(String money)
+	{
+		if(super.createSalePay(money))
+		{
+			//salepay.num2 = 元宝金额
+			if(salepay.num2 > 0 && (salepay.ybje > 0 && salepay.je > 0))//元宝，支付宝同时扣款
+			{
+				PayModeDef  payModeDef  = DataService.getDefault().searchPayMode("7505");
+				saleBS.payAccount(payModeDef,String.valueOf(salepay.num2));
+			
+			}
+			else if(salepay.num2 > 0 &&  (salepay.ybje <= 0 && salepay.je <= 0))//元宝支付
+			{
+				PayModeDef  payModeDef  = DataService.getDefault().searchPayMode("7505");
+				salepay.payname = payModeDef.name;
+				salepay.paycode = payModeDef.code;
+				salepay.ybje =salepay.num2;
+				salepay.je = ManipulatePrecision.doubleConvert(salepay.ybje * salepay.hl, 2, 1);
+				salepay.payno="";
+			}
+		}
+		return true;
+	}
+}

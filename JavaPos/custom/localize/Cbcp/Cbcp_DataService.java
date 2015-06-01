@@ -78,7 +78,7 @@ public class Cbcp_DataService extends Bcrm_DataService
 				if (!NetService.getDefault().getSysPara(null,false,CmdDef.GETCRMPARA)) return false;
 			}*/
 			
-			//if (!NetService.getDefault().getSysPara(NetService.getDefault().getMemCardHttp(CmdDef.GETCRMPARA),false,CmdDef.GETCRMPARA)) return false;
+			if (!NetService.getDefault().getSysPara(NetService.getDefault().getMemCardHttp(CmdDef.GETCRMPARA),false,CmdDef.GETCRMPARA)) return false;
 		}
         
         return AccessLocalDB.getDefault().readSysPara();
