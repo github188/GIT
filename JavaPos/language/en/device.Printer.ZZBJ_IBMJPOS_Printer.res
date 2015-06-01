@@ -1,0 +1,3 @@
+请在平摊打印机中放入打印纸... = Please put the printing paper in the Push-type printer...
+
+卓展北京IBM的JPOS驱动方式打印机 = CHARTER Beijing IBM JPOS driving mode printer

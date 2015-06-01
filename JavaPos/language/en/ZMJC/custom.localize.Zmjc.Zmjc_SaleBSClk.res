@@ -1,0 +1,15 @@
+参与打折促销活动 =Participate in discount promotions
+参与减现促销活动 =Participate in deducted cash promotions
+参与返券促销活动 =Participate in buy and get coupon promotions
+参与赠品促销活动 =Participate in gift promotions
+参与积分活动 =Participate in points collection
+代码 =Code
+描述 =Description
+请选择参与满减满赠活动的规则 =Please select rules to Participate in buy and get discount
+操作失败：未启用常旅卡功能! =Failed:not enabled CHANGTRIP card function!
+操作失败：请在扫商品之前刷卡! =Failed:please swipe before scanner goods!
+请刷常旅卡: =Please swipe CHANGTRIP card:
+卡号不能为空! =Card number can not be empty!
+操作失败: 取消刷卡! =Failed:cancel swipe card!
+超市 =Supermarket
+该商品不是营业柜组范围内的商品\n\n营业员的营业柜组范围是\n =The item does not belong to this sale counter\n\n The shop assistant sale counter unit range is\n

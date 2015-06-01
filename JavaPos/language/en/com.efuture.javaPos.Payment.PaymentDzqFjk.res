@@ -1,0 +1,1 @@
+磁道数据为空! =Magnetic track data is empty! 

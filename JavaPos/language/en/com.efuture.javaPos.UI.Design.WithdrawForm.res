@@ -1,0 +1,15 @@
+缴款窗口 = Payment window
+单号 = Note#
+缴款时间 = Payment time
+收银员 = Cashier
+缴款金额 = Payment_amt
+交易日期 = Trans_date
+班次 = Shift 
+请选择班次 = Please choose shift
+缴款名称 = Payment name
+张数 = Number of pieces
+合     计 = Total
+查询日期 =Query date 
+格式为:YYYYMMDD = format is: YYYYMMDD
+[确认键]保存打印或重传   [打印键]重印   [付款键]切换焦点 = [Confirm]Save the printing or retransmission   [Print]reprint  [Payment]Switch the focus
+[Home键]保存打印或重传   [小票重打键]重印   [付款键]切换焦点 = [Home]Save the printing or retransmission   [Reprint]reprint   [Payment]Switch the focus

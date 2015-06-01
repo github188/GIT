@@ -1,0 +1,1 @@
+IBM4614键盘口刷卡槽 = IBM4614 Keyboard port Swiping card slot

@@ -1,0 +1,12 @@
+您输入的本地数据库不存在,请重新输入! =You enter the local database does not exist, please input again!
+你没有权限查询其他收银员的数据!\n你要进行授权查询吗? =You don't have permission to query other Cashier's data!\n Do you want to authorize a query?
+该员工授权卡无法授权查询 =The employee card cannot be authorized the query
+更新柜组名称失败! =Update counter's name failed!
+当前数据库无数据! =There is no data in the current database！
+正在打印柜组对帐单,请等待... = Printing Counter statement，please wait...
+未发现柜组对帐单对象,不能打印 =Did not find Counter statement,can not print
+请先查询柜组对帐单数据! =Please query counter statement data!
+未能获得柜组对帐单数据! =Unable to get counter statement data!
+生成柜组对帐单对象失败! =Failed to generate counter statement!
+没有查询到柜组统计数据! =There is no counter statistic data to inquiry!
+创建柜组对帐单出现异常! =Error when create counter statement!

@@ -1,0 +1,15 @@
+配置打印模板 = Configuration print template
+名称 = Name
+行 = Row
+列 = Column
+长 = Length
+对齐 = Aligning
+文本内容 = Text
+模拟数据 = Simulative data
+还 原 = Restore
+增加行 = Add row
+删除行 = Delete row
+预 览 = Preview
+保 存 = Save
+退 出 = Quit
+打 开 = Open

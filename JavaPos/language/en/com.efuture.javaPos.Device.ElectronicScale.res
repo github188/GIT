@@ -1,0 +1,1 @@
+[{0}]\n\n电子秤设备对象不存在 = [{0}]\n\n Electronic scale device is not exist

@@ -1,0 +1,1 @@
+IBM4679JAVAX无黑标串口打印机 = IBM4679JAVAX serial port printer without black label

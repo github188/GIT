@@ -1,0 +1,10 @@
+系统参数 =system parameter 
+参数说明 = Parameter instructions
+参数值 = Parameter value
+参数项 = Parameters of the item
+参数项描述 = Parameters of the item description
+当前参数值 = The current parameter values
+参数值说明 = Parameter values description
+关闭窗口 = Close the window
+导出参数SQL =Export parameters SQL
+保存当前设置 = Save the current Settings

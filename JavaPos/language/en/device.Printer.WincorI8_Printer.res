@@ -1,0 +1,1 @@
+WincorI8款机的串口打印机 =Serial port printer of  WincorI8 POS 

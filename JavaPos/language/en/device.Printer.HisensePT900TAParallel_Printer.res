@@ -1,0 +1,1 @@
+HisensePT900TA并口打印机 = HisensePT900TA parallel port printer

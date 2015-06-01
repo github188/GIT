@@ -1,0 +1,13 @@
+配置更新服务器 = Configure renewal server
+请配置FTP更新服务器,用于自动更新应用程序与相关配置 = Please configure the FTP renewal server, for updating application and relative configuration automatic
+IP地址 = IP address
+端口号 = Port No.
+用户名 = Name
+密  码 = Password
+连接FTP服务器成功 = Connect TFP server succeed
+连接FTP服务器失败 = Connect TFP server failed
+连接FTP服务器失败 = Connect TFP server failed
+测试连接 = Testing connection
+FTP压力测试 = FTP pressure testing
+被动模式 = Passive model
+找不到文件: = File not found:

@@ -1,0 +1,1 @@
+系统产生严重错误，强行退出 = Fatal error, forced quit

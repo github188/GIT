@@ -1,0 +1,15 @@
+此卡需要激活：= This card need to activate：
+\n\n是否马上需要激活？= \n\n Whether to need to activate immediately?
+会员卡刷卡失败：此卡未激活（款员放弃）= Swipe member card failure : This card is not activated (cashier abandon)
+会员卡刷卡失败：此卡未激活= Swipe member card failure : This card is not activated
+\n会员卡刷卡失败：此卡没有进行激活\n\n= \n Swipe member card failure : This card without activation \n\n
+卡    号: = Card number:
+持 卡 人: = Cardholder:
+卡 状 态: = Card state:
+卡 积 分: = Points in card:
+卡 类 别: = Card type:
+基础积分率: =Basic point rate:
+基础折扣率: =Basic discount rate:
+零钞转存: =Bills to save:
+零钞余额: =Bills balance:
+零钞上限: =Bills limit:

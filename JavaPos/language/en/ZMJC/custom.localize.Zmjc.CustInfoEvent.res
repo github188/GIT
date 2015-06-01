@@ -1,0 +1,16 @@
+提示:未找到当前输入的国籍 =Note:Not found the nationality
+提示:未找到当前输入的航班号 =Note:Not found the flight number
+读取护照 =Loading passport
+护照信息获取有误. =Passport information acquisition error.
+护照信息赋值完成. =Passport information assignment complete.
+行号 =Line number
+航班号 =Flight number
+航空公司 =Air line
+起飞时间 =Takeoff time
+英文名称 =English name
+中文名称 =Chinese name
+顾客信息保存出现异常!\n可返回扫码界面,按[付款键]后重试! =Customer information is stored abnormal!\nReturn to scan code interface,retry after press[Payment]!
+护照号输入不规范, 请重新输入! =Passport number entered is not standardized, please re-enter !
+当前护照号已经被使用,是否继续使用? \n\n1-是 / 任意键-否  =Passport number is already in use , whether to continue to use?\n\n1-YES / any key-NO 
+信息必须输入,请补全! =Information must be entered , please fill full !
+确认要退出顾客信息的录入? \n\n1-是 / 任意键-否  =Confirm that you want to exit input the customer information?? \n\n1-YES / any key-NO  

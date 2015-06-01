@@ -1,0 +1,14 @@
+数据库名不能为空 =Database name can not be empty
+您输入的数据库名不合法,超出当天日期范围 =Database name you entered is not legitimate , beyond the scope of today's date
+您确定要删除包括输入日期之前所有的Day数据库吗? =Are you sure you want to delete all Day database include you entered before the date?
+当天数据库中存在小票,您真的要删除吗? =There are tickets in the day of the database,Do you really want to delete it?
+正在清除本地销售数据,请等待... =Cleaning up local sales data , please wait ...
+本地清除数据失败 =Failed to clear local data
+本地清除数据失败 =Failed to clear local data
+本地销售已全部清除 =Local sales have all been cleared
+本地清除数据出现异常: =Error when cleared local data
+收银机被命令进行初始化操作，删除所有历史数据。\n是否执行此项操作？ =POS was ordered to perform initialization,delete all historical data.\n Whether to perform this operation?
+再次确认是否删除所有保存在本机中的历史数据？\n\n2-是 / 任意键-否 =To confirm whether to delete all historical data stored in the local once again？\n\n2-YES  / Any key-NO
+POS初始化成功！\r\n本地数据清理完毕。 =POS initialization success! \r\n Local data cleared.
+收银机被命令删除包括{0}之前的历史数据!\n是否执行此项操作？ =POS was ordered to delete all historical data include {0} before!\n Whether to perform this operation?
+成功删除包括{0}之前的历史数据 =Successful Delete all historical data include {0} before

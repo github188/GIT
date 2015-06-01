@@ -1,0 +1,9 @@
+专业键盘设备初始化失败! = Professional key device initialize failed
+按键名称 = Key name
+按键1 = Key1
+按键2 = Key2
+Enter:修改键 Delete:删除键  F10:保存退出 ESC：直接退出 = Enter: modify  Delete: delete  F10: save and Quit  ESC：Quit
+Enter:修改键 Delete:删除键 F10:保存退出 ESC：直接退出=Enter: Modify Delete: Delete F10: Save and Quit ESC：Quit
+是否消除当前键值 = Whether clear the current key value
+是否放弃当前设置不保存 = Whether abandon the current settings not saved
+是否保存键值并退出 = Whether save the key value and quit

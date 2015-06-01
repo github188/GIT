@@ -1,0 +1,6 @@
+贴花码解析规则
+#define APPLIQUE_CODE_FROM		"29"		//贴花条码的前2位值
+#define APPLIQUE_CODE_POSITION	2			//贴花条码中店内码的起始位置
+#define APPLIQUE_CODE_LEN	  6				//贴花条码中店内码的长度
+#define APPLIQUE_MONEY_POSITION 8			//贴花条码中金额的起始位置
+#define APPLIQUE_MONEY_LEN	  4				//贴花条码中金额的长度

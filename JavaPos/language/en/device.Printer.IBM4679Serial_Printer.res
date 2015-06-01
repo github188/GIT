@@ -1,0 +1,1 @@
+IBM4679无黑标功能串口打印机 = IBM4679 serial port printer without black label function

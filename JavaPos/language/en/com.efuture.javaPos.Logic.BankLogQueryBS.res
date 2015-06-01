@@ -1,0 +1,12 @@
+您输入的本地数据库不存在,请重新输入! =You enter the local database does not exist, please input again!
+付款方式 =POS tender
+付款接口名称 =Payment interface name
+接口对象 =interface object
+请选择银联金卡工程接口 =Please select unionpay card  engineering interface
+成功 =success
+您输入的本地数据库不存在,请重新输入! =You enter the local database does not exist, please input again!
+您输入的本地数据库不存在,请重新输入! =You enter the local database does not exist, please input again!
+你选择的日志交易未成交执行，不能重印签购单 =You choose to log transactions not clinch a deal,Can not be reprinted sales slip
+你确定要重印[{0}]流水的交易签购单吗? =Are you sure you want to reprint[{0}]serial transaction sales slip?
+流水号的交易签购单已重打印! = serial transaction sales slip has been reprinted!
+未知交易类型 =Unknown transaction type

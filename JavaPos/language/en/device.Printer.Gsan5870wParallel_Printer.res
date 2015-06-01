@@ -1,0 +1,1 @@
+吉成5870w并口打印机 = GSAN5870w parallel port printer

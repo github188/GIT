@@ -1,0 +1,1 @@
+打开并口打印机异常:\n = Open the parallel port printer exception:\n

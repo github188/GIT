@@ -1,0 +1,1 @@
+海信VC110串口顾客显示牌 = Hisense VC110 serial line display

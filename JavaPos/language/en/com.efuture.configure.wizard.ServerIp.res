@@ -1,0 +1,11 @@
+POSSERVER配置 = POSSERVER configuration
+请配置POSSERVER服务器 = Please configure the POSSERVER server
+POSSERVER服务地址 = POSSERVER server address
+POSSERVER服务端口 = POSSERVER server port
+测试连接 = Connection testing
+连接POSSERVER服务器成功 = Connect POSSERVER server succeed
+连接POSSERVER服务器失败 = Connect POSSERVER server failed
+连接POSSERVER服务器失败 = Connect POSSERVER server failed
+PosServer压力测试 = POSSERVER pressure testing
+POSSERVER服务路径 = POSSERVER server path
+找不到文件: = File not found:

@@ -1,0 +1,21 @@
+PosServer压力测试 = PosServer pressure testing
+开始测试 = Start testing
+停止测试 = Stop testing
+清除信息 = Clear info.
+参数设置 = Parameter setted
+服务器地址: = Server address:
+测试命令: = Testing command
+线程数量: = Thread quantity:
+延时(毫秒): = Time delay(MS)
+测试信息 = Test info.
+线程ID = Thread ID
+启动时间 = Start time
+命令发送次数 = Command send times
+异常信息 = Error message
+停止时间 = Stop time
+状态信息 = State message
+活动线程数量: = Active thread quantity:
+命令失败次数: = Command failure times:
+命令发送次数: = Command send times:
+关闭窗口 = Close the window
+ 

@@ -1,0 +1,1 @@
+请重新刷卡 =please re-swipe 

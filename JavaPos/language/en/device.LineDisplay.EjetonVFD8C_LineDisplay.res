@@ -1,0 +1,1 @@
+易捷通VFD8C串口顾客显示牌 = Ejeton VFD8C serial line display

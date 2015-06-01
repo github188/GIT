@@ -1,0 +1,1 @@
+PARTNER款机CD7111串口顾客显示牌 = PARTNER POS CD7110 serial port customer board

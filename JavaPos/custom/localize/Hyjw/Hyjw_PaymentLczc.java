@@ -1,0 +1,63 @@
+package custom.localize.Hyjw;
+
+import com.efuture.javaPos.Logic.SaleBS;
+import com.efuture.javaPos.Payment.Payment;
+import com.efuture.javaPos.Struct.PayModeDef;
+import com.efuture.javaPos.Struct.SaleHeadDef;
+import com.efuture.javaPos.Struct.SalePayDef;
+
+import custom.localize.Hyjw.Hyjw_MzkModule.RetInfoDef;
+
+public class Hyjw_PaymentLczc extends Payment
+{
+	public Hyjw_PaymentLczc()
+	{
+
+	}
+
+	public Hyjw_PaymentLczc(PayModeDef mode, SaleBS sale)
+	{
+		initPayment(mode, sale);
+	}
+
+	// 该构造函数用于红冲小票时,通过小票付款明细创建对象
+	public Hyjw_PaymentLczc(SalePayDef pay, SaleHeadDef head)
+	{
+		initPayment(pay, head);
+	}
+
+	public boolean createLczcSalePay(double zl)
+	{
+		RetInfoDef retinfo = Hyjw_MzkModule.getDefault().changeSale(true, salepay.je);
+		if (retinfo == null)
+			return false;
+
+		if (!retinfo.retcode.equals("00"))
+			return false;
+
+		// 创建SalePay
+		if (!createSalePayObject(String.valueOf((zl))))
+			return false;
+
+		// 零钞转存付款方式金额记负数
+		salepay.ybje *= -1;
+		salepay.je *= -1;
+
+		// 代表零钞转存
+		salepay.memo = "3";
+
+		return true;
+	}
+
+	public boolean cancelPay()
+	{
+		RetInfoDef retinfo = Hyjw_MzkModule.getDefault().changeSale(false, salepay.je);
+		if (retinfo == null)
+			return false;
+
+		if (retinfo.retcode.equals("00"))
+			return true;
+
+		return false;
+	}
+}

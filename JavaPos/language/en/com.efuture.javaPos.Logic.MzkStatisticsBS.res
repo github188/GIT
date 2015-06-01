@@ -1,0 +1,9 @@
+是否打印收款明细? =Whether to print receipts details?
+收款统计打印完毕 =Receivables Statistics finished printing
+面值卡收款统计打印模板不存在，不能打印 =Face value card receivables statistics print template does not exist , you can not print
+班次 =Shift
+收银员工号 =Cashier number
+请选择需打印的班次 =Please select shift which to print
+付款方式 =POS tender
+付款代码 =POS code
+请选择需打印的付款方式 =Please select Payment method which to print 

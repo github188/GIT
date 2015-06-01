@@ -1,0 +1,16 @@
+您输入的本地数据库不存在,请重新输入! =You enter the local database does not exist, please input again!
+当前数据库无数据! =There is no data in the current database！
+连接当前数据库对象为空! =Connect current database object is empty !
+连接当前数据库对象为空! =Connect current database object is empty !
+正在打印收银员销售报表,请等待... =Printing cashier sales reports, please wait...
+未发现收银员销售报表对象,不能打印 =No cashier sales reports, you can not print
+连接当前数据库对象为空! =Connect current database object is empty !
+收银员销售报表主单查询出现失败! =Failed to query cashier Sales Reports main!
+生成收银员销售报表主单失败! =Failed to generate cashier Sales Reports main!
+查无此收银员销售报表主单! =Not to found the cashier Sales Reports main!
+创建收银员销售报表主单异常! =Error when generate cashier Sales Reports main!
+连接当前数据库对象为空! =Connect current database object is empty !
+销售明细付款查询出现失败! =Failed to query payment of sales details!
+销售明细付款失败! =Sales details of payment failure! 
+查无此销售明细付款! =Not found the payment of sales details!
+创建销售明细付款异常! =Error when generate the payment of sales details!

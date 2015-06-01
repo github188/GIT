@@ -1,0 +1,15 @@
+柜组销售统计 =Counter sales statistics
+柜组号 =Counter
+销售金额 =Amount
+笔数 =Qty
+退货金额 =Returns
+笔数 =Qty
+折扣金额 =DiscAmt
+日期(YYYYMMDD) =Date(YYYYMMDD)
+收银员 =cashier
+当前款员 =cashier
+所有款员 =cashier
+班次 =Shift
+全部班次 =Shifts
+[付款键切换输入] =【Key switch input of pay】
+合计: =Total:

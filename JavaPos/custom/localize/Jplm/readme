@@ -1,0 +1,67 @@
+-JAVA_SENDCOUPON			用券接口 
+--功能: 
+
+一。用券接口：
+
+	--1.查券
+	--2.消费-更改用券标志已使用,最好有实际用券金额
+	--3.消费冲正-更改用券标志为未使用
+	--4.退货-更改用券标志为未使用
+	--5.退货冲正-更改用券标志为已使用
+--参数
+		--@vtype      VARCHAR(255),    /* 交易类型,'01'-消费,'02'-消费冲正,'03'-退货,'04'-退货冲正,'05'-查询 */
+    --@vseqno	     int,					/* 交易流水号*/
+    --@vtermno    varchar(255),    		/* 终端号*/
+    --@vmktcode   char(4),    			/* 门店号*/
+    --@vsyjh	     char(6),				/* 收银机号*/
+    --@vfphm	     int,					/* 小票号*/
+    --@vsyyh	     char(5),				/* 收银员号*/
+    --@vinvdjlb  	 varchar(255),			/* 单据类别 */
+    --@vpaycode	 varchar(255),			/* 付款方式*/
+    --@vje	     dec(8,2),			/* 金额*/ 券金额减去损溢
+    --@vtrack1     varchar(255),    		/* 磁道一 */
+    --@vtrack2     varchar(255),    		/* 磁道二,传入券号*/  多个用券号用逗号分开
+    --@vtrack3     varchar(255),    		/* 磁道三*/   传入损溢金额也用逗号隔开，如10，20，30
+    --@vpasswd     varchar(255),    	/* 密码*/	
+	
+	
+		--@retcode  int 	output,  		/*返回值(0-表过程执行OK,1-表过程执行异常)* /
+		--@retmsg varchar(255)  output,	 /*返回过程执行提示信息*/
+ 
+		--@rcoupontype  	varchar(255) output,  	/*券类型(作为商品收券的条件)*/  0 -表全场，1-品牌，2-品类  
+		--@rcondition   		varchar(255) output, /*券的具体条件*/ ALL-全场，否则放入具体的某个品牌ppcode或catid
+		--@rcouponcode  	varchar(255) output, 	/*券号*/        券号是需要Pos前台传入的13位条码 ，查找验证OK后，请将vtrack2赋给rcouponcode
+		--@rcouponmoney  dec(8,2) output,		/*券面值*/
+		--@rcouponrule  	varchar(255) output, 	/*收券规则*/  收券规则是一组规则，需要用3个返回值 ，每满xx元用于用yy元，最多允许用zz元；如每满100元允许用20元，最多用40元，则返回格式100,20,40
+		--@rmemo  varchar(255) output 			 /*备用字段*/ 
+		
+		
+二。单品折扣券接口 （和海亮一样）
+JAVA_FINDREBATECOUPON(@couponno nvarchar(100),
+											@retcode int output,
+											@retmsg nvarchar(100) output,
+											@goodscode nvarchar(13) output,
+											@goodsprice numeric(18,2) output
+											@goodsdjbh nvarchar(20) output)
+											
+											
+											CREATE  PROCEDURE [dbo].[JAVA_GETSALECoupon]
+  @mktcode  NVARCHAR(20), /* 门店号          */ 
+  @syjh     NVARCHAR(20), /* 收银机号       */
+  @fphm     NVARCHAR(20), /* 小票号码          */ 
+  @jygs	    NVARCHAR(20), /* 经营公司          */
+  @CouponNo NVARCHAR(20), /* 券号          */
+  @PayType  NVARCHAR(20),  /*支付方式      */
+	 	
+  @retcode  int OUTPUT, /* 返回值          */
+  @retmsg   NVARCHAR(100) OUTPUT, /* 返回提示          */ 
+  @CouponFlag int OUTPUT,   /*券类型标志：1=不定额代金券 2=定额代金券 4=折扣券*/
+  @CouponTypeID int OUTPUT, /* 券类型*/
+  @Value dec(12,3) OUTPUT,	--折算后券面值
+  @Discount int OUTPUT, 	--券折扣率 例子: 10=9折 20=8折 30=7折,
+  @EnableValue Dec(12,2) OUTPUT  --可用券金额,为0表示不限制使用
+---------------------------------------------------------------------------
+--dbo.JAVA_GETSALECoupon      获取满赠券信息
+--输入：小票信息，返回：满足条件券内容。 断点：9580XX
+--@retcode=0表示该券可用，@retcode=-1表示该券不满足该小票条件。
+--新建：丘丹 2014.11.03

@@ -1,0 +1,13 @@
+(常旅卡)返券卡交易必须联网使用! =( CHANGTRIP card)Redemption card Transaction must be used online!
+付款金额必须大于0 =Payment amount must be greater than 0
+删除原付款方式失败！ =Delete original POS tender failed!
+该付款方式最多允许付款{0}元 =This POS tender allows payment most {0}US Dollar
+最大可退金额为:  =Maximum return amount is:
+请输入券面值 =Please input the face value of coupon
+券面值 =Face value of coupon
+实际付款为: =The actual payment for:
+最大券面值为: =The maximum face value of coupons is:
+请输入此券益余金额 =Please enter this coupon benefits amount
+益余金额 =Benefits amount
+实际付款为: =The actual payment for:
+\n最大益余金额为: =\nThe maximum benefits amount is:

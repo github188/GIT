@@ -1,0 +1,1 @@
+文本顾客显示牌 = Text customer board

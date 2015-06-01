@@ -1,0 +1,1 @@
+WincorTH200款机的串口打印机 = Serial port printer of  WincorTH200 POS

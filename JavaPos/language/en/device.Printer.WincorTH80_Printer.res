@@ -1,0 +1,1 @@
+WincorI8款机TH80串口打印机 = TH80 Serial port printer of  WincorI8 POS

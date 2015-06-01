@@ -1,0 +1,11 @@
+您输入的本地数据库不存在,请重新输入! =You enter the local database does not exist, please input again!
+你没有权限查询其他收银员的数据!\n你要进行授权查询吗? =You don't have permission to query other Cashier's data!\n Do you want to authorize a query?
+该员工授权卡无法授权查询 =The employee card cannot be authorized the query
+当前数据库无数据! =There is no data in the current database！
+正在打印营业员报表,请等待... =Printing salesperson report, please wait ...
+未发现营业员报表对象,不能打印 =Did not find salesperson report,can not print
+请先查询营业员报表数据! =Please query salesperson report data!
+未能获得营业员报表数据! =Unable to get salesperson report data!
+营业员报表对象失败! =Failed to generate salesperson report!
+没有查询到营业员统计数据! =There is no salesperson statistic data to inquiry!
+创建营业员报表出现异常! =Error when create salesperson report!

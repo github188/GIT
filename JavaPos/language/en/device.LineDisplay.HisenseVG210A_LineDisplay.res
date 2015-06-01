@@ -1,0 +1,1 @@
+海信VG210A串口顾客显示牌 = Hisense VG210A serial port customer board

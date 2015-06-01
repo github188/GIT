@@ -1,0 +1,1 @@
+打印机未连接,打印操作将无法执行 =Printer is not connected,Printing operation can not be performed

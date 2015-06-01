@@ -1,0 +1,13 @@
+返券卡信息 = Search redemption card info
+卡  号 =Card#
+持卡人 =Cardholder
+卡状态 =State
+开始日期 =Start date
+结束日期 =End date
+A券余额 =A balance
+B券余额 =B balance
+F券余额 =F balance
+当前可用余额 =Balance
+A券: =Coupon A:
+B券: =Coupon B:
+F券: =Coupon F:

@@ -1,0 +1,1 @@
+转换{0}数据对象\n的{1}成员时发生错误! = Error occurred when transform the \n{1} member of data objects {0}!

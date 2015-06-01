@@ -1,0 +1,3928 @@
+#include <fpos.h>
+
+//规则促销显示提示信息 1-显示,0-不显示
+#define RuleShowMsg			0
+#define WriteDebugLog 		0
+
+int IsNoMjDzxl(char *dzxl);
+
+//计算超市商品的应收金额
+double FSaleWindow::CalculateCSComYsje()
+{	
+	double ysje = 0;
+	for (int i=0;i < salecom_num; i++)
+	{	
+		//家电商品不计算
+		if(salecom[i].comisjd == 'Y') continue;
+		
+		if (salecom[i].flag == '0') continue;
+
+		if (salecom[i].type == '8')	//以旧换新
+		{
+			ysje -= salecom[i].zje - ZZK(salecom[i]);
+		}
+		else
+		{
+			ysje += salecom[i].zje - ZZK(salecom[i]);
+		}
+	}	
+	return ysje;
+}
+
+//void FSaleWindow::DoPreSent()
+//{
+//	//中百要求批发跟正常销售一样处理
+//	if (GSysPara.iszs != 'Y' || salecom_num <= 0 || !ISSALE(saletype) || ISPFSALE(saletype)&&IsZBCC()) return;
+//
+//	int i,j,num,comnum,search_flag,result;
+//	double sl,tsl,jg;
+//	char buf[80+1];
+//	GiftDef gift;
+//	struct ComArrayDef
+//	{
+//		int i;
+//		double sl;
+//	} *comarray;
+//	comarray = new struct ComArrayDef[salecom_num];
+//	if (comarray == NULL) return;
+//
+//	//按商品进行分组,确定有多少个商品要进行赠送搜索
+//	for (num=0,i=0;i<salecom_num;i++)
+//	{
+//		if (salecom[i].flag == '0' || cominfo[i].iszs != 'Y') continue;
+//
+//		for (j=0;j<num;j++)
+//		{
+//			if (strcmp(salecom[i].code,salecom[comarray[j].i].code) == 0)
+//			{
+//				comarray[j].i   = i;
+//				comarray[j].sl += FloatConvert(salecom[i].sl * salecom[i].bzhl,2);
+//				break;
+//			}
+//		}
+//		if (j >= num)	//未找到
+//		{
+//			comarray[num].i  = i;
+//			comarray[num].sl = FloatConvert(salecom[i].sl * salecom[i].bzhl,2);
+//			num++;
+//		}
+//	}
+//	//查找每个商品是否存在赠品
+//	for (comnum=salecom_num,i=0;i<num;i++)
+//	{
+//		result = FindGift(salecom[comarray[i].i].code,salecom[comarray[i].i].gz,comarray[i].sl,salehead.rqsj,gift);
+//		if (!result) continue;
+//
+//		memset(&curcom,0,sizeof(CommodDef));
+//		if (gift.gifttype == '0' || gift.gifttype == '1')
+//		{
+//			switch(gift.gifttype)
+//			{
+//			case '0'://自定义
+//				strcpy(curcom.barcode,gift.giftcode);
+//				strcpy(curcom.code,gift.giftcode);
+//				strcpy(curcom.gz,gift.giftgz);
+//				strcpy(curcom.name,gift.giftdesc);
+//				strcpy(curcom.unit,"个");
+//				curcom.type = '0';
+//				curcom.isxh = 'Y';
+//				result = 1;
+//				break;
+//			case '1'://赠送商品
+//				search_flag = 4;
+//				result = FindCommod(search_flag,gift.giftcode,gift.giftgz,curcom);
+//				break;
+//			}
+//			if (result != 1) continue;
+//
+//			sprintf(buf,"购买%3d %-4s %-20s\n\n获赠%3d %-4s %-20s\n\n请确定是否赠送(1-是/2-否)",(int)salecom[comarray[i].i].sl,salecom[comarray[i].i].unit,salecom[comarray[i].i].name,(int)gift.giftsl,curcom.unit,curcom.name);
+//			if (MessageBox(buf) == KB_NUM2) continue;
+//
+//			quantity = gift.giftsl;
+//			price    = 0;
+//			allprice = 0;
+//			strcpy(curcom.yhdjbh,gift.giftid);
+//
+//			curzpflag = 1;			//赠品标志
+//			memset(curbatch,0,15);
+//
+//			AddSaleCommod();
+//			DispSaleCommod();
+//
+//			CreateInputLine(2);
+//		}
+//		else	//某商品打折销售
+//		{
+//			for (sl=0,j=0;sl<gift.giftsl && j<comnum;j++)
+//			{
+//				if (strcmp(salecom[j].code,gift.giftcode) == 0 &&
+//					strcmp(salecom[j].gz,gift.giftgz) == 0 &&
+//					strcmp(salecom[j].spec,"00") == 0)
+//				{
+//					jg = FloatConvert((salecom[j].zje - ZZK(salecom[j]) + salecom[j].zszke)/salecom[j].sl,2);
+//					if (gift.giftjg > jg) continue;
+//					tsl = salecom[j].sl - cominfo[j].giftsl;
+//					if (tsl < 0.99) continue;
+//
+//					salecom[j].zszke  += FloatConvert(min(tsl,gift.giftsl - sl)*(jg - gift.giftjg),2);
+//					cominfo[j].giftsl += FloatConvert(min(tsl,gift.giftsl - sl),2);
+//
+//					sl += min(tsl,gift.giftsl - sl);
+//
+//					if (j >= winfirst && j < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(j - winfirst,j);
+//				}
+//			}
+//		}
+//	}
+//	delete[] comarray;
+//
+//	DispPay();
+//
+//	if (saleysje < GSysPara.minzsje) return;
+//
+//	//检查是否存在按小票进行赠送
+//	result = FindGift("0","0",saleysje,salehead.rqsj,gift);
+//	if (!result) return;
+//	memset(&curcom,0,sizeof(CommodDef));
+//	if (gift.gifttype == '0' || gift.gifttype == '1')
+//	{
+//		switch(gift.gifttype)
+//		{
+//		case '0'://自定义
+//			strcpy(curcom.barcode,gift.giftcode);
+//			strcpy(curcom.code,gift.giftcode);
+//			strcpy(curcom.gz,gift.giftgz);
+//			strcpy(curcom.name,gift.giftdesc);
+//			strcpy(curcom.unit,"个");
+//			curcom.type = '0';
+//			curcom.isxh = 'Y';
+//			result = 1;
+//			break;
+//		case '1'://赠送商品
+//			search_flag = 4;
+//			result = FindCommod(search_flag,gift.giftcode,gift.giftgz,curcom);
+//			break;
+//		}
+//		if (result != 1) return;
+//
+//		sprintf(buf,"购物达 %.2f 元可获如下赠品\n\n%s\n\n请确定是否赠送(1-是/2-否)",gift.salesl,curcom.name);
+//		if (MessageBox(buf) == KB_NUM2) return;
+//
+//		quantity = gift.giftsl;
+//		price    = 0;
+//		allprice = 0;
+//		strcpy(curcom.yhdjbh,gift.giftid);
+//
+//		curzpflag = 1;			//赠品标志
+//		memset(curbatch,0,15);
+//
+//		AddSaleCommod();
+//		DispSaleCommod();
+//
+//		CreateInputLine(2);
+//	}
+//	else	//某商品打折销售
+//	{
+//		for (sl=0,j=0;sl<gift.giftsl && j<comnum;j++)
+//		{
+//			if (strcmp(salecom[j].code,gift.giftcode) == 0 &&
+//				strcmp(salecom[j].gz,gift.giftgz) == 0 &&
+//				strcmp(salecom[j].spec,"00") == 0)
+//			{
+//				jg = FloatConvert((salecom[j].zje - ZZK(salecom[j]) + salecom[j].zszke)/salecom[j].sl,2);
+//				if (gift.giftjg > jg) continue;
+//				tsl = salecom[j].sl - cominfo[j].giftsl;
+//				if (tsl < 0.99) continue;
+//
+//				salecom[j].zszke += FloatConvert(min(tsl,gift.giftsl - sl)*(jg - gift.giftjg),2);
+//				cominfo[j].giftsl += FloatConvert(min(tsl,gift.giftsl - sl),2);
+//
+//				sl += min(tsl,gift.giftsl - sl);
+//
+//				if (j >= winfirst && j < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(j - winfirst,j);
+//			}
+//		}
+//	}
+//	DispPay();
+//}
+
+//int FSaleWindow::DelPreSent()
+//{
+//	//中百要求批发跟正常销售一样处理
+//	if ((GSysPara.iszs != 'Y' && GSysPara.istsyh != 'Y') || !ISSALE(saletype) || ISPFSALE(saletype)&&IsZBCC()) return TRUE;
+//
+//	//	int i = salecom_num-1;
+//	int i,k;
+//
+//	for (i=0;i<salecom_num;i++)
+//	if (salecom[i].flag == '1' /*|| 
+//	cominfo[i].infostr1[0] == 'A' || 
+//	cominfo[i].infostr1[0] == 'B' || 
+//	cominfo[i].infostr1[0] == 'C' || 
+//		cominfo[i].infostr1[0] == 'D'*/) break;
+//
+//	k = 0;
+//	if (salecom[i].flag == '1')
+//	{
+//		if (MessageBox("该操作将取消已赠送的赠品\n\n您确定吗?(1-是/2-否)") != KB_NUM1) return FALSE;
+//		k = 1;
+//	}
+//	i = salecom_num-1;
+//	/*
+//	while(salecom[i].flag == '1')
+//	{
+//	CursorUp();
+//
+//	DelCurCommod(1);
+//
+//	i--;
+//	}
+//	*/
+//
+//	//有赠品，要先把赠品删除掉
+//	if (k)
+//	{
+//		//把指针还原到最后一个商品上
+//		while (curno < salecom_num) CursorDown();
+//
+//		//删除赠品
+//		while (i>0)
+//		{
+//			CursorUp();
+//
+//			if (salecom[i].flag == '1')
+//			{
+//				DelCurCommod(1);
+//
+//				CursorDown();
+//			}
+//			i--;
+//		}
+//		//把指针还原到最后一个商品上
+//		while (curno < salecom_num) CursorDown();
+//	}
+//	//删除规则优惠
+//	for (i=0;i<salecom_num;i++)
+//	{
+//		k = 0;
+//		if (salecom[i].zszke > 0)
+//		{
+//			salecom[i].zszke  = 0;
+//			cominfo[i].giftsl = 0;
+//			k = 1;
+//		}
+//		if (cominfo[i].infostr1[0] == 'A' || 
+//			cominfo[i].infostr1[0] == 'B' || 
+//			cominfo[i].infostr1[0] == 'C' || 
+//			cominfo[i].infostr1[0] == 'D')
+//		{
+//			//			cominfo[i].yhtype = '0';
+//			cominfo[i].yhtype = cominfo[i].infostr2[1];
+//
+//			k = 1;
+//		}
+//		if (k == 1)
+//		{
+//			salecom[i].lszke = 0;//扣去满减的折扣
+//			//计算会员折扣和优惠折扣
+//			CalculateAllRebate(i);
+//
+//			//批量销售折扣处理,重算优惠折扣和会员折扣
+//			CalculateBatchRebate(i);
+//			if (i >= winfirst && i < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(i - winfirst,i);
+//		}
+//		if (cominfo[i].infostr1[0] == 'A' || 
+//			cominfo[i].infostr1[0] == 'B' || 
+//			cominfo[i].infostr1[0] == 'C' || 
+//			cominfo[i].infostr1[0] == 'D') cominfo[i].infostr1[0] = 'Y';
+//	}
+//	DispPay();
+//
+//	return TRUE;
+//}
+
+int FSaleWindow::DelPreSentEx()
+{
+	// int i = salecom_num-1;
+	//中百要求批发跟正常销售一样处理
+	if ((GSysPara.iszs != 'Y' && GSysPara.istsyh != 'Y') || !ISSALE(saletype) || ISPFSALE(saletype)/*&&IsZBCC()*/) return TRUE;
+
+	int i;
+
+	for (i=0;i<salecom_num;i++)
+	if (salecom[i].flag == '1' || 
+		fabs(salecom[i].rulezke) > 0 ||
+		fabs(salecom[i].mjzke) > 0 ||
+		salecom[i].zszke > 0) break;
+
+	if (i < salecom_num && MessageBox("该操作将取消已赠送的赠品\n\n你确定吗?(1-是/2-否)") != KB_NUM1) return FALSE;
+
+	i = salecom_num - 1;
+
+	//把指针还原到最后一个商品上
+	while (curno < salecom_num) CursorDown();
+	CursorUp();
+
+	while (curno >= 0)
+	{
+		i = curno;
+
+		if (salecom[i].flag == '1')
+		{
+			//该赠品如果是由正常商品改为赠品，则还原为正常商品
+			if (salecom[i].batch[0] == '4' && FloatCmp(salecom[i].xxtax,0,2) >= 0)
+			{
+				salecom[i].flag = salecom[i].batch[0];
+				salecom[i].batch[0] = '\0';
+				//重新刷新显示
+				if (i >= winfirst && i < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(i - winfirst,i);
+			}
+			else
+			{
+				DelCurCommod(1);
+				CursorDown();
+			}
+		}
+		if (curno <= 0) break;
+		CursorUp();
+	}
+	//把指针还原到最后一个商品上
+	while (curno < salecom_num) CursorDown();
+
+	//	ruleyhje = 0;
+	for (i=0;i<salecom_num;i++)
+	{
+		if (fabs(salecom[i].rulezke) > 0 || fabs(salecom[i].mjzke) > 0 || salecom[i].zszke > 0 /*|| (IsZBCQ() && salecom[i].yhzke >0 && cominfo[i].infostr1[2] == 'Y')*/)
+		{
+			//			ruleyhje += salecom[i].rulezke;
+			//			ruleyhje += salecom[i].mjzke;
+//			if (IsZBCQ())
+//			{	
+////				char strbuf[150+1];
+////				sprintf(strbuf,"商品[%s]取消折扣[%G]",salecom[i].code,ZZK(salecom[i]));
+////				MessageBox(strbuf);
+//			}
+			salecom[i].rulezke  = 0;
+			salecom[i].rulezkfd = 0;
+			strcpy(salecom[i].ruledjbh,"");
+
+			salecom[i].mjzke  = 0;
+			salecom[i].mjzkfd = 0;
+			strcpy(salecom[i].mjdjbh,"");
+
+			salecom[i].zszke  = 0;
+			cominfo[i].giftsl = 0;
+
+			memset(salehead.thsq,0,sizeof(salehead.thsq));
+			
+//			//如果是中百重庆,并且参与了重庆通卡的促销
+//			if (IsZBCQ() && cominfo[i].infostr1[2] == 'Y')
+//			{
+//				salecom[i].comnum1 = 0;
+//				salecom[i].comnum2 = 0;
+//				//清除由于没有刷会员卡而计算出来的会员折扣
+//
+//				salecom[i].yhzke = 0;
+//				salecom[i].hyzke = 0;			
+//				salecom[i].yhzkfd =0;//清除普通优惠和会员优惠			
+//				salecom[i].spzkfd =0;			
+//				memset(salecom[i].yhdjbh,0,sizeof(salecom[i].yhdjbh));
+////				salecom[i].printtype = 'N'; //将黄金促销的标志改为N					
+//
+//				IsCqIckPop = 'C';//表示重庆通促销取消,取消交易在没有刷会员卡的时候不重算会员折扣							
+//				//并且这个标志可以作为所有付款方式取消的判断。
+//				//即,如果是取消的付款，根据此标志,会员重算的时候没有刷会员卡的不再去取会员折扣,
+//				//以避免窗体再次弹出商品有会员优惠的提示。jiangwenqiang 2011-6-24 11:56:58						
+//			}
+			//计算会员折扣和优惠折扣
+			CalculateAllRebate(i);
+
+			//批量销售折扣处理,重算优惠折扣和会员折扣
+			CalculateBatchRebate(i);
+
+			//计算印花促销
+			CalculateStamp(i);
+
+			//计算黄金促销
+			CalculateCustPop(i);
+
+			if (i >= winfirst && i < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(i - winfirst,i);
+		}
+	}
+	//重算小票金额
+	DispPay();
+
+	//即扫即打,打印前一个商品
+	if (fabs(ruleyhje) > 0 && GSysSyj.printfs == '1' && (!ISLXSALE(saletype) || GSysPara.lxprint == 'Y'))
+	{
+		char prtbuf[MAX_PAPER_WIDTH+1];
+		sprintf(prtbuf,"取消以上商品优惠 %8.2f",0-ruleyhje);
+		PrinterDraft(prtbuf);
+	}
+	return TRUE;
+}
+
+//int FSaleWindow::FindListRuleCom(SalePromotionDef * yh,char flag,long * bs)
+//{
+//	int i,found,ret=FALSE;
+//	double sl;
+//	int comarray[MAX_SALECOM];
+//	int num;
+//
+//	num = 0;
+//	sl = 0;
+//
+//	for (i=0;i<salecom_num;i++)
+//	{
+//		found = 0;
+//
+//		//只有正常商品才参加规则促销
+//		if (salecom[i].flag != '4') continue;
+//
+//		//判断是否曾参与规则促销
+//		if (flag == 'N' && cominfo[i].infostr1[0] != 'Y') continue;
+//
+//		switch(yh->type)
+//		{
+//		case '1':
+//			if (strcmp(yh->code,salecom[i].code)) break;
+//			if ((strcmp(yh->gz,salecom[i].gz) == 0 || strcmp(yh->gz,"0") == 0) && (strcmp(yh->spec,salecom[i].spec) == 0 || strcmp(yh->spec,"AL") == 0))
+//			{
+//				found = 1;
+//			}
+//			break;
+//		case '2':
+//			if (strcmp(yh->code,salecom[i].gz)) break;
+//			found = 1;
+//			break;
+//		case '3':
+//			//				if (strcmp(yh->code,salecom[i].dzxl)) break;
+//			if (strncmp(yh->code,salecom[i].dzxl,strlen(yh->code))) break;
+//			found = 1;
+//			break;
+//		case '4':
+//			if (strcmp(yh->code,salecom[i].gz)) break;
+//			if (strcmp(yh->pp,salecom[i].pp) == 0)
+//			{
+//				found = 1;
+//			}
+//			break;
+//		case '5':
+//			//				if (strcmp(yh->code,salecom[i].dzxl)) break;
+//			if (strncmp(yh->code,salecom[i].dzxl,strlen(yh->code))) break;
+//			if (strcmp(yh->pp,salecom[i].pp) == 0)
+//			{
+//				found = 1;
+//			}
+//			break;
+//		case '6':
+//			if (strcmp(yh->code,salecom[i].pp)) break;
+//			found = 1;
+//			break;
+//		case '7':
+//			if (strcmp(yh->code,salecom[i].code)) break;
+//			if ((strcmp(yh->gz,salecom[i].gz) == 0 || strcmp(yh->gz,"0") == 0) && (strcmp(yh->spec,salecom[i].spec) == 0 || strcmp(yh->spec,"AL") == 0))
+//			{
+//				found = 1;
+//			}
+//			break;
+//		}
+//		//printf("\nflag=[%c]",flag);
+//		//printf("\nyh->code=[%s]",yh->code);
+//		//printf("\nyh->gz=[%s]",yh->gz);
+//		//printf("\nyh->spec=[%s]",yh->spec);
+//		//printf("\nyh->dzxl=[%s]",yh->dzxl);
+//		//printf("\nfound=[%d]",found);
+//		//
+//		//printf("\nsalecom[i].code=[%s]",salecom[i].code);
+//		//printf("\nsalecom[i].gz=[%s]",salecom[i].gz);
+//		//printf("\nsalecom[i].spec=[%s]",salecom[i].spec);
+//		//printf("\nsalecom[i].dzxl=[%s]",salecom[i].dzxl);
+//		//
+//		//fflush(stdout);
+//		//getch();
+//
+//		if (found == 1)
+//		{
+//			comarray[num] = i;
+//			//yhhyj = 0，表示yhlsj中记录的是数量
+//			//yhhyj = 1，表示yhlsj中记录的是金额
+//			if (yh->yhhyj == 0)
+//				sl += salecom[i].sl;
+//			else
+//				sl += salecom[i].zje-ZZK(salecom[i]);
+//			num ++;
+//
+//		}
+//	}
+//	if (num > 0)
+//	{
+//		if (flag == 'Y')
+//		{
+//			sl = *bs * yh->yhpfj;
+//			//hubing
+//			//char tmpbuf[100];
+//			//sprintf(tmpbuf,"sl=%.2f\nbs=%ld\nyh->yhpfj=%.2f",
+//			//			sl,*bs,yh->yhpfj);
+//			//MessageBox(tmpbuf);
+//			int break_flag = 0;
+//			SaleCommodDef old_com;
+//
+//			for (i=0;i<num;i++)
+//			{
+//				//sprintf(tmpbuf,"salecom[comarray[i]].sl=%.2f",salecom[comarray[i]].sl);
+//				//MessageBox(tmpbuf);
+//				if (salecom[comarray[i]].sl == sl) break_flag = 1;
+//
+//				//商品拆分
+//				if (salecom[comarray[i]].sl < sl)
+//				{
+//					sl -= salecom[comarray[i]].sl;
+//				}
+//				else
+//				if (salecom[comarray[i]].sl > sl)
+//				{
+//					memset(&salecom[salecom_num],0,sizeof(SaleCommodDef));
+//					memset(&cominfo[salecom_num],0,sizeof(SaleCommodInfoDef));
+//					salecom[salecom_num] = salecom[comarray[i]];
+//					cominfo[salecom_num] = cominfo[comarray[i]];
+//
+//					salecom[salecom_num].sl = salecom[comarray[i]].sl - sl;
+//					salecom[comarray[i]].sl = sl;
+//
+//					//重算金额
+//					salecom[comarray[i]].zje = FloatConvert(salecom[comarray[i]].sl * salecom[comarray[i]].jg,2);
+//					salecom[salecom_num].zje = FloatConvert(salecom[salecom_num].sl * salecom[salecom_num].jg,2);
+//
+//					salecom_num ++;
+//
+//					//计算会员折扣和优惠折扣
+//					CalculateAllRebate(salecom_num-1);
+//
+//					//批量销售折扣处理,重算优惠折扣和会员折扣
+//					CalculateBatchRebate(salecom_num-1);
+//
+//					//记录未打印标志
+//					printflag[salecom_num-1] = 'N';
+//
+//					//记录断点
+//					WriteBroken(salecom_num-1,BROKEN_APPEND);
+//
+//					if (salecom_num-1 >= winfirst && salecom_num-1 < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(salecom_num-1 - winfirst,salecom_num-1);
+//
+//					break_flag = 1;
+//				}
+//				//MessageBox(yh->djbh);
+//
+//				SaleCommodInfoDef old_info = cominfo[comarray[i]];
+//				old_com = salecom[comarray[i]];
+//				strcpy(cominfo[comarray[i]].yhdjbh,yh->djbh);
+//				cominfo[comarray[i]].yhtype = yh->type;
+//				cominfo[comarray[i]].yhzkfd = yh->zkfd;
+//				cominfo[comarray[i]].yhlsj  = yh->yhlsj;
+//				cominfo[comarray[i]].yhhyj  = yh->yhhyj;
+//				cominfo[comarray[i]].yhzkl  = yh->yhzkl;
+//				cominfo[comarray[i]].yhhyzkl= yh->yhhyzkl;
+//
+//				//记录优惠单据编号
+//				strcpy(salecom[comarray[i]].yhdjbh,yh->djbh);
+//				//修改标志，让规则促销可以优惠到0
+//				char oldIsYhtoZero = GSysPara.IsYhtoZero;
+//				GSysPara.IsYhtoZero = 'Y';
+//
+//				//计算会员折扣和优惠折扣
+//				CalculateAllRebate(comarray[i]);
+//
+//				//批量销售折扣处理,重算优惠折扣和会员折扣
+//				CalculateBatchRebate(comarray[i]);
+//
+//				cominfo[comarray[i]] = old_info;
+//				GSysPara.IsYhtoZero = oldIsYhtoZero;
+//
+//				cominfo[comarray[i]].infostr1[0] = 'D';
+//
+//				if (comarray[i] >= winfirst && comarray[i] < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(comarray[i] - winfirst,comarray[i]);
+//
+//				//即扫即打
+//				if (FloatCmp(salecom[comarray[i]].yhzke,old_com.yhzke,2) != 0 && GSysSyj.printfs == '1' && (!ISLXSALE(saletype) || GSysPara.lxprint == 'Y') && printflag[comarray[i]] == 'Y')
+//				{
+//					GetMinusSaleCom(old_com,salecom[salecom_num]);
+//
+//					//		PrintSaleLocal(PRT_SECTION_COMMOD,salecom_num);	//打印商品明细
+//					char prtbuf[80];
+//					sprintf(prtbuf,"%4d<-此行取消%10.2f",comrowno[comarray[i]],GetSaleSign(salecom[salecom_num].zje-ZZK(salecom[salecom_num])));
+//					PrinterDraft(prtbuf);
+//
+//					PrintSaleLocal(PRT_SECTION_COMMOD,comarray[i]);			//打印商品明细
+//				}
+//				CreateInputLine(2);
+//
+//				if (break_flag == 1) break;
+//			}
+//			ret = TRUE;
+//		}
+//		else
+//		{
+//			if ((sl >= yh->yhlsj && yh->yhlsj > 0) || yh->yhlsj <= 0)
+//			{
+//				ret = TRUE;
+//				//检查小票列表中所有参加规则促销的商品的标志是否都为‘Y’
+//				for (i=0;i<num;i++)
+//				if (cominfo[comarray[i]].infostr1[0] != 'Y')
+//				{
+//					ret = FALSE;
+//					//char buf[100];
+//					//sprintf(buf,"i=[%d]num=[%d] [%d]",i,num,comarray[i]);
+//					//MessageBox(buf,"str[1]不为Y");
+//					break;
+//				}
+//			}
+//			*bs = 1L;
+//
+//			if (yh->yhlsj > 0)
+//			{
+//				sl = FloatConvert(sl / yh->yhlsj,0,0);
+//
+//				*bs = (long)sl;
+//			}
+//			if (*bs < 1L) *bs = 1L;
+//		}
+//	}
+//	return ret;
+//}
+
+//判断是否不参数满减的类别
+int IsNoMjDzxl(char *dzxl)
+{
+	if (strlen(GSysPara.NoMjDzxl) <= 0) return FALSE;
+	if (dzxl == NULL || strlen(dzxl) <= 0) return FALSE;
+
+	char s_str1[80+1];
+	char s_str2[80+1];
+	memset(s_str1,0,sizeof(s_str1));
+	memset(s_str2,0,sizeof(s_str2));
+	strcpy(s_str1,GSysPara.NoMjDzxl);
+	while (strlen(s_str1) > 0)
+	{
+		SplitString(s_str1,s_str2,s_str1,',');
+		if (strncmp(s_str2,dzxl,strlen(s_str2)) == 0) return TRUE;
+	}
+	return FALSE;
+}
+
+//void FSaleWindow::DoPreSentRule()
+//{
+//	//中百要求批发跟正常销售一样处理
+//	if (GSysPara.istsyh != 'Y' || salecom_num <= 0 || !ISSALE(saletype) || ISPFSALE(saletype)&&IsZBCC()) return;
+//
+//	int i,j,k,num;
+//	SalePromotionDef yh;
+//	SalePromotionDef list[MAX_SALERULE];
+//	char scsj[20+1];
+//	long bsarray[MAX_SALECOM];
+//	long bs;
+//	double s_saleysje = saleysje;
+//
+//	if (IsZBCC()/* && strlen(GSysPara.NoMjDzxl) > 0*/)
+//	{
+//		for (i=0;i<salecom_num;i++)
+//		{
+//			//			if (strstr(GSysPara.NoMjDzxl,salecom[i].dzxl) != NULL)
+//			if (IsNoMjDzxl(salecom[i].dzxl))
+//			{
+//				s_saleysje -= salecom[i].zje - ZZK(salecom[i]);
+//			}
+//		}
+//	}
+//	//查规则促销的信息
+//	k = salecom_num;
+//	for (i=0;i<k+1;i++)
+//	{
+//		//只有正常商品才参加规则促销
+//		if (i != k && salecom[i].flag != '4') continue;
+//
+//		//判断是否曾参与规则促销
+//		if (i != k && cominfo[i].infostr1[0] != 'Y') continue;
+//
+//		memset(scsj,0,20);
+//		//查找整单的规则优惠
+//		if (i == k)
+//		{
+//			strcpy(salecom[salecom_num].code,"ALL");
+//			sprintf(salecom[salecom_num].gz,"%-.2f",s_saleysje);
+//			strcpy(salecom[salecom_num].dzxl,"");
+//			strcpy(salecom[salecom_num].pp,"");
+//			strcpy(salecom[salecom_num].spec,"");
+//
+//			//有规则促销
+//			if (!FindSalePromotionRule(&salecom[salecom_num],salehead.rqsj,scsj,yh)) continue;
+//		}
+//		else
+//		{
+//			//有规则促销
+//			if (!FindSalePromotionRule(&salecom[i],salehead.rqsj,scsj,yh)) continue;
+//		}
+//		bs = 0L;
+//		j = num = 0;
+//
+//		//MessageBox("找到促销组合规则");
+//
+//		//type=8表示整单金额达到指定金额就优惠
+//		if (yh.type == '8')
+//		{
+//			if (s_saleysje >= yh.yhlsj && yh.yhlsj > 0)
+//			{
+//				for (int n=0;n<MAX_SALECOM;n++) bsarray[n] = 0;
+//
+//				bs = (long)FloatConvert(s_saleysje / yh.yhlsj,0,0);
+//			}
+//			else continue;
+//		}
+//		else
+//		{
+//			//找到规则促销的组合规则
+//			if (!FindSalePromotionRuleMx(yh.djbh,'8',list,&num)) continue;
+//
+//			//依次对小票列表中查找是否存在组合规则
+//			for (j=0;j<num;j++)
+//			{
+//				if (!FindListRuleCom(&list[j],'N',&bsarray[j])) break;
+//			}
+//		}
+//		//char tmpbuf[100];
+//		//sprintf(tmpbuf,"bs = %ld\ns_saleysje=%f\nyh.yhlsj=%f\n",bs,s_saleysje,yh.yhlsj);
+//		//MessageBox(tmpbuf);
+//		if (j >= num)
+//		{
+//			//MessageBox("找到促销组合结果");			
+//			for (int n=0;n<MAX_SALERULE;n++) memset(&list[n],0,sizeof(SalePromotionDef));
+//
+//			if (bs == 0L)
+//			{
+//				bs = bsarray[0];
+//				for (j=1;j<num;j++) if (bs > bsarray[j]) bs = bsarray[j];
+//			}
+////			char str[100+1];
+////			sprintf(str,"bs:[%d]",bs);
+////			MessageBox(str);
+//			//找到规则促销的优惠组合结果
+//			if (FindSalePromotionRuleMx(yh.djbh,'A',list,&num))
+//			{
+//				for (j=0;j<num;j++)
+//				{
+//					FindListRuleCom(&list[j],'Y',&bs);
+//				}
+//				DispCurnoArrow(1);
+//
+//				//显示汇总信息
+//				DispPay();
+//
+//				//修改小票中已经参加了规则的商品
+//				for (int l=0;l<salecom_num;l++)
+//				if (strcmp(salecom[i].code,salecom[l].code) == 0 &&
+//					strcmp(salecom[i].gz,salecom[l].gz) == 0 &&
+//					strcmp(salecom[i].spec,salecom[l].spec) == 0)
+//					cominfo[l].infostr1[0] = 'A';
+//			}
+//			//找到规则促销的赠送组合结果
+//			if (FindSalePromotionRuleMx(yh.djbh,'B',list,&num))
+//			{
+//				//修改小票中已经参加了规则的商品
+//				for (int l=0;l<salecom_num;l++)
+//				if (strcmp(salecom[i].code,salecom[l].code) == 0 &&
+//					strcmp(salecom[i].gz,salecom[l].gz) == 0 &&
+//					strcmp(salecom[i].spec,salecom[l].spec) == 0 && cominfo[l].infostr1[0] != 'A')
+//					cominfo[l].infostr1[0] = 'B';
+//
+//				//添加赠品
+//				for (j=0;j<num;j++)
+//				{
+//					if (FindCommod(4,list[j].code,list[j].gz,curcom) != 1) continue;
+//
+//					//检查商品个数
+//					if (salecom_num >= MAX_SALECOM) return;
+//
+//					quantity = bs * list[j].yhlsj;
+//
+//					//yhpfj不为零时，表示单张小票的赠送数量的限量
+//					if (list[j].yhpfj > 0 && quantity > list[j].yhpfj) quantity = list[j].yhpfj;
+//
+//					//赠品数量不能为零，因为数量为零会造成小票不能送网
+//					if (quantity <= 0) quantity = 1;
+//
+//					price    = 0;
+//					allprice = 0;
+//					strcpy(curcom.yhdjbh,list[j].djbh);
+//
+//					curzpflag = 1;			//赠品标志
+//					memset(curbatch,0,15);
+//
+//					AddSaleCommod();
+//					DispSaleCommod();
+//
+//					//需要加钱的赠品
+//					salecom[salecom_num - 1].xxtax = FloatConvert(quantity * list[j].yhhyj,2);
+//
+//					CreateInputLine(2);
+//				}
+//			}
+//			//找到规则促销的返现金组合结果
+//			if (FindSalePromotionRuleMx(yh.djbh,'C',list,&num))
+//			{
+//				//修改小票中已经参加了规则的商品
+//				for (int l=0;l<salecom_num;l++)
+//				if (strcmp(salecom[i].code,salecom[l].code) == 0 &&
+//					strcmp(salecom[i].gz,salecom[l].gz) == 0 &&
+//					strcmp(salecom[i].spec,salecom[l].spec) == 0 && cominfo[l].infostr1[0] == 'Y')
+//					cominfo[l].infostr1[0] = 'C';
+//
+//				//添加返现金的赠品
+//				for (j=0;j<num;j++)
+//				{
+//					if (FindCommod(4,list[j].code,list[j].gz,curcom) != 1) continue;
+//
+//					//检查商品个数
+//					if (salecom_num >= MAX_SALECOM) return;
+//
+//					quantity = bs;
+//
+//					//yhpfj不为零时，表示单张小票的赠送数量的限量
+//					if (list[j].yhpfj > 0 && quantity > list[j].yhpfj) quantity = list[j].yhpfj;
+//
+//					//赠品数量不能为零，因为数量为零会造成小票不能送网
+//					if (quantity <= 0) quantity = 1;
+//
+//					price    = 0;
+//					allprice = 0;
+//					strcpy(curcom.yhdjbh,list[j].djbh);
+//
+//					curzpflag = 1;			//赠品标志
+//					memset(curbatch,0,15);
+//
+//					AddSaleCommod();
+//
+//					DispSaleCommod();
+//
+//					//返现金的赠品
+//					salecom[salecom_num - 1].xxtax = 0 - FloatConvert(quantity * list[j].yhlsj,2);
+//
+//					CreateInputLine(2);
+//				}
+//			}
+//			//查找整单满减的规则结果
+//			if (FindSalePromotionRuleMx(yh.djbh,'D',list,&num))
+//			{
+//				double yhje=0;
+//				double zyhje=0;
+//				double zje = s_saleysje;
+//				SaleCommodDef old_com;
+//				//将减现的结果分到商品明细上
+//				for (j=0;j<num;j++)
+//				{
+//					yhje = list[j].yhlsj;
+//					if (FloatCmp(list[j].yhhyj,1.00,2) >= 0) yhje *= bs; //满减金额*倍数=实际要满减的金额
+//					if (FloatCmp(yhje,0,2) <= 0) continue;
+//					zyhje += yhje;
+//
+//					//记录满减的单据编号
+//					strcpy(salehead.salefphm,yh.djbh);
+//					//分摊满减金额到商品明细上
+//					for (int l=0;l<salecom_num;l++)
+//					{
+//						//						if (IsZBCC() && strlen(GSysPara.NoMjDzxl) > 0)
+//						//						{
+//						//							if (strstr(GSysPara.NoMjDzxl,salecom[l].dzxl) != NULL) continue;
+//						//						}
+//						if (IsZBCC() && IsNoMjDzxl(salecom[l].dzxl)) continue;
+//
+//						double je = FloatConvert((salecom[l].zje-ZZK(salecom[l]))/zje*yhje,2);
+//						old_com = salecom[l];
+//						yhje -= je;
+//						zje -= salecom[l].zje-ZZK(salecom[l]);
+//						salecom[l].lszke += je;
+//						cominfo[l].infostr1[0] = 'D';
+//
+//						//重新显示商品信息
+//						if (l >= winfirst && l < winfirst+PAGE_SALE_COM - 1) DispOneSaleCommod(l - winfirst,l);
+//
+//						//即扫即打
+//						if (FloatCmp(salecom[l].lszke,old_com.lszke,2) != 0 && GSysSyj.printfs == '1' && (!ISLXSALE(saletype) || GSysPara.lxprint == 'Y') && printflag[l] == 'Y')
+//						{
+//							GetMinusSaleCom(old_com,salecom[salecom_num]);
+//
+//							//		PrintSaleLocal(PRT_SECTION_COMMOD,salecom_num);	//打印商品明细
+//							char prtbuf[80];
+//							sprintf(prtbuf,"%4d<-此行取消%10.2f",comrowno[l],GetSaleSign(salecom[salecom_num].zje-ZZK(salecom[salecom_num])));
+//							PrinterDraft(prtbuf);
+//
+//							PrintSaleLocal(PRT_SECTION_COMMOD,l);			//打印商品明细
+//						}
+//					}
+//					//未分配完的金额默认放到最后一个商品上面
+//					if (FloatCmp(yhje,0,2) > 0)
+//					{
+//						old_com = salecom[salecom_num-1];
+//
+//						salecom[salecom_num-1].lszke += yhje;
+//
+//						//重新显示商品信息
+//						if (salecom_num-1 >= winfirst && salecom_num-1 < winfirst+PAGE_SALE_COM - 1) DispOneSaleCommod(salecom_num-1 - winfirst,salecom_num-1);
+//
+//						//即扫即打
+//						if (FloatCmp(salecom[salecom_num-1].lszke,old_com.lszke,2) != 0 && GSysSyj.printfs == '1' && (!ISLXSALE(saletype) || GSysPara.lxprint == 'Y') && printflag[salecom_num-1] == 'Y')
+//						{
+//							GetMinusSaleCom(old_com,salecom[salecom_num]);
+//
+//							//		PrintSaleLocal(PRT_SECTION_COMMOD,salecom_num);	//打印商品明细
+//							char prtbuf[80];
+//							sprintf(prtbuf,"%4d<-此行取消%10.2f",comrowno[salecom_num-1],GetSaleSign(salecom[salecom_num].zje-ZZK(salecom[salecom_num])));
+//							PrinterDraft(prtbuf);
+//
+//							PrintSaleLocal(PRT_SECTION_COMMOD,salecom_num-1);			//打印商品明细
+//						}
+//					}
+//				}
+//				//将满减的金额记录到主单的thsq字段用于打印
+//				if (zyhje > 0)
+//				{
+//					sprintf(salehead.thsq,"%-.2f",zyhje);
+//				}
+//				//显示汇总信息
+//				DispPay();
+//			}
+//		}
+//		//一张小票如果找到一个金额满足的就不再找了
+//		if (yh.type == '8') break;
+//	}
+//}
+
+////本地查找规则促销的结果
+//int DbfFindSalePromotionRuleMx(char * djbh,char djlb,SalePromotionDef *list,int *retnum)
+//{
+//	//本地查找
+//	int i,num;
+//	FDbase db;
+//	long recno;
+//	SalePromotionDef pyh;
+//
+//	if (!db.OpenDBF(DB_YHCODE))  return FALSE;
+//	if (!db.OpenIDX(IDX_YHDJBH)) return FALSE;
+//
+//	num = 0;
+//
+//	//将找到的该单据的所有商品都找出来
+//	recno = db.index_search(&recno,djbh);
+//	while (recno > 0)
+//	{
+//		db.go_record(recno);
+//		if (!db.isdeleted())
+//		{
+//			memset(&pyh,0,sizeof(SalePromotionDef));
+//			db.ReadDBF(&pyh);
+//			if (strcmp(pyh.djbh,djbh)) break;
+//			if (pyh.yhdjlb == djlb)
+//			{
+//				list[num] = pyh;
+//				num ++;
+//				if (num >= MAX_SALERULE) break;
+//			}
+//		}
+//		recno = db.find_next();
+//	}
+//	db.CloseIDX();
+//	db.CloseDBF();
+//
+//	if (num <= 0) return FALSE;
+//
+//	*retnum = num;
+//
+//	return TRUE;
+//}
+
+////查找规则促销的结果
+//int FindSalePromotionRuleMx(char * djbh,char djlb,SalePromotionDef *list,int *retnum)
+//{
+//	int ret = FALSE;
+//
+//	//脱网或本地优先时，优先在本地查找
+//	if (GSyjStatus.netstatus != 'Y' || GSysSyj.printxe >= 1)
+//	{
+//		ret = DbfFindSalePromotionRuleMx(djbh,djlb,list,retnum);
+//	}
+//		
+//	//本地找不到时，再到网上查找
+//	if (!ret && GSyjStatus.netstatus == 'Y')
+//	{
+//		struct
+//		{
+//			char djbh[15+1];
+//			char djlb;
+//		} para;
+//		int i,num;
+//		
+//		SysStatusLine.SaveHlpArea();
+//		SysStatusLine.DispHlpText("正在网上查找促销明细信息");
+//
+//		if (!SendRequestPacketHead(CMD_FINDYHRULEMX,1))
+//		{
+//			SysStatusLine.RestoreHlpArea();
+//			return FALSE;
+//		}
+//		strcpy(para.djbh,djbh);
+//		para.djlb = djlb;
+//
+//		//printf("\npara.djbh=[%s]",para.djbh);
+//		//printf("\npara.djlb=[%c]",para.djlb);
+//		//fflush(stdout);
+//		//getch();
+//
+//		if (!SendRequestPacketData(&para,sizeof(para)))
+//		{
+//			SysStatusLine.RestoreHlpArea();
+//			return FALSE;
+//		}
+//		if (!RecvResultPacketHead(num) || num <= 0)
+//		{
+//			SysStatusLine.RestoreHlpArea();
+//			return FALSE;
+//		}
+//		//		if ((list = new SalePromotionDef[num]) == NULL)
+//		//		{
+//		//			SysStatusLine.RestoreHlpArea();
+//		//			return FALSE;
+//		//		}
+//
+//		for (i=0;i<num;i++)
+//		{
+//			if (i >= MAX_SALERULE)
+//			{
+//				SalePromotionDef yh;
+//				RecvResultPacketData(&yh,sizeof(SalePromotionDef));
+//			}
+//			else
+//			{
+//				if (!RecvResultPacketData(&list[i],sizeof(SalePromotionDef)))
+//				{
+//					//				delete list;
+//					SysStatusLine.RestoreHlpArea();
+//					return FALSE;
+//				}
+//			}
+//			//printf("\nlist[%d]=[%s]",i,list[i].djbh);
+//			//fflush(stdout);
+//			//getch();
+//		}
+//		SysStatusLine.RestoreHlpArea();
+//
+//		if (num >= MAX_SALERULE) num = MAX_SALERULE;
+//
+//		//printf("\nnum=[%d]",num);
+//		//fflush(stdout);
+//		//getch();
+//
+//		*retnum = num;
+//
+//		ret = TRUE;
+//	}
+//	
+//	return ret;
+//}
+
+////本地查找规则促销
+//int DbfFindSalePromotionRule(SaleCommodDef * com,char *yhsj,char *scsj,SalePromotionDef &yh)
+//{
+//	//本地查找
+//	FDbase db;
+//	long recno,maxseqno;
+//	SalePromotionDef pyh;
+//	char yhdjbh[15+1];
+//	char sj[8+1];
+//
+//	if (!db.OpenDBF(DB_YHCODE))  return FALSE;
+//	if (!db.OpenIDX(IDX_YHCODE)) return FALSE;
+//
+//	//只接取主单上的时间
+//	GetTime(yhsj,sj);
+//	sj[5]='\0';					//去掉秒钟
+//
+//	maxseqno = 0;
+//
+//	//单品优惠 type=1
+//	//电子秤商品的保质时间优惠 type=7
+//	recno = db.index_search(&recno,com->code);
+//	while (recno > 0)
+//	{
+//		db.go_record(recno);
+//		if (!db.isdeleted())
+//		{
+//			memset(&pyh,0,sizeof(SalePromotionDef));
+//			db.ReadDBF(&pyh);
+//			if (strcmp(pyh.code,com->code)) break;
+//			if ((strcmp(pyh.gz,com->gz) == 0 || strcmp(pyh.gz,"0") == 0) && (strcmp(pyh.spec,com->spec) == 0 || strcmp(pyh.spec,"AL") == 0) &&
+//				(
+//				strcmp(SYSDATE,pyh.ksrq) >=0 && strcmp(SYSDATE,pyh.jsrq) <=0 &&
+//				strcmp(sj,pyh.kssj) >=0 && strcmp(sj,pyh.jssj) <=0 &&
+//				pyh.seqno > maxseqno && pyh.yhdjlb == '8' &&
+//				(
+//				pyh.type == '1' ||
+//				(pyh.type == '7' && strcmp(scsj,"") && DisTime(yhsj,scsj) >= 60L*pyh.yhspace)
+//				)
+//				)
+//				)
+//			{
+//				maxseqno = pyh.seqno;
+//				yh = pyh;
+//			}
+//		}
+//		recno = db.find_next();
+//	}
+//	//柜组优惠和柜组品牌优惠 type=2,4
+//	recno = db.index_search(&recno,com->gz);
+//	while (recno > 0)
+//	{
+//		db.go_record(recno);
+//		if (!db.isdeleted())
+//		{
+//			memset(&pyh,0,sizeof(SalePromotionDef));
+//			db.ReadDBF(&pyh);
+//			if (strcmp(pyh.code,com->gz)) break;
+//			if (strcmp(SYSDATE,pyh.ksrq) >=0 && strcmp(SYSDATE,pyh.jsrq) <=0 &&
+//				strcmp(sj,pyh.kssj) >=0 && strcmp(sj,pyh.jssj) <=0 &&
+//				pyh.seqno > maxseqno && pyh.yhdjlb == '8' &&
+//				(
+//				pyh.type == '2' ||
+//				(pyh.type == '4' && strcmp(pyh.pp,com->pp) == 0)
+//				)
+//				)
+//			{
+//				maxseqno = pyh.seqno;
+//				yh = pyh;
+//			}
+//		}
+//		recno = db.find_next();
+//	}
+//	//小类优惠和小类品牌优惠 type=3,5
+//	recno = db.index_search(&recno,com->dzxl);
+//	while (recno > 0)
+//	{
+//		db.go_record(recno);
+//		if (!db.isdeleted())
+//		{
+//			memset(&pyh,0,sizeof(SalePromotionDef));
+//			db.ReadDBF(&pyh);
+//			if (strcmp(pyh.code,com->dzxl)) break;
+//			if (strcmp(SYSDATE,pyh.ksrq) >=0 && strcmp(SYSDATE,pyh.jsrq) <=0 &&
+//				strcmp(sj,pyh.kssj) >=0 && strcmp(sj,pyh.jssj) <=0 &&
+//				pyh.seqno > maxseqno && pyh.yhdjlb == '8' &&
+//				(
+//				pyh.type == '3' ||
+//				(pyh.type == '5' && strcmp(pyh.pp,com->pp) == 0)
+//				)
+//				)
+//			{
+//				maxseqno = pyh.seqno;
+//				yh = pyh;
+//			}
+//		}
+//		recno = db.find_next();
+//	}
+//	//品牌优惠 type=6
+//	recno = db.index_search(&recno,com->pp);
+//	while (recno > 0)
+//	{
+//		db.go_record(recno);
+//		if (!db.isdeleted())
+//		{
+//			memset(&pyh,0,sizeof(SalePromotionDef));
+//			db.ReadDBF(&pyh);
+//			if (strcmp(pyh.code,com->pp)) break;
+//			if (strcmp(SYSDATE,pyh.ksrq) >=0 && strcmp(SYSDATE,pyh.jsrq) <=0 &&
+//				strcmp(sj,pyh.kssj) >=0 && strcmp(sj,pyh.jssj) <=0 &&
+//				pyh.seqno > maxseqno && pyh.yhdjlb == '8' &&
+//				(
+//				pyh.type == '6'
+//				)
+//				)
+//			{
+//				maxseqno = pyh.seqno;
+//				yh = pyh;
+//			}
+//		}
+//		recno = db.find_next();
+//	}
+//	//整单优惠 type=8
+//	if (strcmp(com->code,"ALL") == 0)
+//	{
+//		double tmpje = atof(com->gz);
+//		double maxje = 0;
+//		recno = db.index_search(&recno,com->code);
+//		while (recno > 0)
+//		{
+//			db.go_record(recno);
+//			if (!db.isdeleted())
+//			{
+//				memset(&pyh,0,sizeof(SalePromotionDef));
+//				db.ReadDBF(&pyh);
+//				if (strcmp(pyh.code,com->code)) break;
+//				if (strcmp(SYSDATE,pyh.ksrq) >=0 && strcmp(SYSDATE,pyh.jsrq) <=0 &&
+//					strcmp(sj,pyh.kssj) >=0 && strcmp(sj,pyh.jssj) <=0 &&
+//					/*pyh.seqno > maxseqno && */pyh.yhdjlb == '8' &&
+//					(
+//					pyh.type == '8' && tmpje > pyh.yhlsj && pyh.yhlsj > maxje
+//					)
+//					)
+//				{
+//					maxseqno = pyh.seqno;
+//					maxje = pyh.yhlsj;
+//					yh = pyh;
+//				}
+//			}
+//			recno = db.find_next();
+//		}
+//	}
+//	db.CloseIDX();
+//	db.CloseDBF();
+//
+//	if (maxseqno == 0L) return FALSE;
+//	else return TRUE;
+//}
+
+////查找规则促销
+//int FindSalePromotionRule(SaleCommodDef * com,char *yhsj,char *scsj,SalePromotionDef &yh)
+//{
+//	int ret = FALSE;
+//	
+//	//脱网或本地优先时，先查本地
+//	if (GSyjStatus.netstatus != 'Y' || GSysSyj.printxe >= 1)
+//	{
+//		ret = DbfFindSalePromotionRule(com,yhsj,scsj,yh);
+//	}
+//	
+//	//本地找不到，并且是联网时，再到网上查找
+//	if (!ret && GSyjStatus.netstatus == 'Y')
+//	{
+//		struct
+//		{
+//			char code[13+1];
+//			char gz[20+1];
+//			char dzxl[10+1];
+//			char pp[6+1];
+//			char spec[2+1];
+//			char scsj[19+1];
+//			char yhsj[19+1];
+//		} para;
+//		memset(&para,0,sizeof(para));
+//		strcpy(para.code,com->code);
+//		strcpy(para.gz,com->gz);
+//		strcpy(para.dzxl,com->dzxl);
+//		strcpy(para.pp,com->pp);
+//		strcpy(para.spec,com->spec);
+//		strcpy(para.scsj,scsj);
+//		strcpy(para.yhsj,yhsj);
+//
+//		//printf("\npara.code=[%s]",para.code);
+//		//printf("\npara.gz=[%s]",para.gz);
+//		//printf("\npara.dzxl=[%s]",para.dzxl);
+//		//printf("\npara.pp=[%s]",para.pp);
+//		//printf("\npara.spec=[%s]",para.spec);
+//		//printf("\npara.scsj=[%s]",para.scsj);
+//		//printf("\npara.yhsj=[%s]",para.yhsj);
+//		//fflush(stdout);
+//		//getch();
+//
+//		//保存信息提示区
+//		SysStatusLine.SaveHlpArea();
+//		SysStatusLine.DispHlpText("正在网上查找优惠信息");
+//
+//		ret = SendNetCommand(CMD_FINDYHRULE,&para,sizeof(para),&yh,sizeof(SalePromotionDef));
+//
+//		//printf("\nret=[%d]",ret);
+//		//printf("\nyh.djbh=[%s]",yh.djbh);
+//		//fflush(stdout);
+//		//getch();
+//
+//		//恢复信息提示区
+//		SysStatusLine.RestoreHlpArea();
+//	}
+//
+//	return ret;
+//}
+
+void FSaleWindow::DoPreSentRuleEx(void)
+{ 
+	//团购和团购退货不参与规则促销
+	if (ISTGSALE(saletype) || ISTGTHSALE(saletype)) return;
+	
+	if (GSysPara.istsyh != 'Y' || salecom_num <= 0 || !ISSALE(saletype) || ISPFSALE(saletype)) return; 
+
+	int i,j,k,l,m,n;
+	SalePromotionDef yh;
+	char scsj[20+1];
+	long bs;
+	int old_salecom_num = salecom_num;
+	double zje,je;
+	long minbs=0;
+	char s_mstr[255+1];//满金额(数量)
+	long t_minbs;
+	double t_zje;
+	double or_yhsl = 0 ;//结果为OR关系的时候,存放第一个结果的数量
+#if WriteDebugLog
+	char s_str[100+1];
+#endif //WriteDebugLog
+
+//	int *rulecom  = new int[salecom_num];
+	int rulecom[MAX_SALECOM+1];
+	int rulepos;
+	int rulecount;
+
+	//借用SyjGzDef的结构 李志奎 2011.06.21
+	DynaArray<SyjGzDef> NotRuleDjbh;//规则促销条件的列表
+	//char NotRuleDjbh[MAX_SALECOM][15+1];//本单已找过并且未满足条件的规则促销单
+	int  NotRuleNum=0;             //上述变量的数量
+
+	//初始化规则促销金额
+	ruleyhje = 0;
+
+	//当前慢件总金额
+	curmjzje = 0;
+	memset(salehead.thsq,0,sizeof(salehead.thsq));
+
+	//释放动态数组的元素
+	rulepop_num = 0;
+	rulepoplist.FreeAll();
+	rulemx_num  = 0;
+	rulemxlist.FreeAll();
+
+	NotRuleDjbh.SetSize(20);
+
+	//打印出最后一个商品信息 
+	if (GSysSyj.printfs == '1' && (!ISLXSALE(saletype) || GSysPara.lxprint == 'Y'))
+	{
+		for (i=0;i<salecom_num;i++)
+		if (printflag[i] != 'Y')
+		{
+			PrintSaleLocal(PRT_SECTION_COMMOD,i);
+			printflag[i] = 'Y';
+		}
+		//营业员分单
+		if (GSysSyj.issryyy == 'Y') PrintSaleManSum(salecom_num-1,1);
+	}
+	//初始化标志
+	for (i=0;i<salecom_num;i++)
+	{
+		cominfo[i].infostr1[1] = 'Y';
+	}
+	
+	//按商品编码排序
+	for (rulecount=0,i=0;i<salecom_num;i++)
+	{
+		for (k=0;k<rulecount;k++)
+		{
+			if (strcmp(salecom[i].code,salecom[rulecom[k]].code) < 0) break;
+		}
+		
+//		sprintf(s_mstr,"k=%d,i=%d,rulecount=%d",k,i,rulecount);
+//		MessageBox(s_mstr);
+		
+		if (k < rulecount)
+		{
+			for (j=rulecount+1;j>k;j--) rulecom[j] = rulecom[j-1];
+			rulecom[k] = i;
+			rulecount++;
+		}
+		else
+		{
+			rulecom[rulecount++] = i;
+		}
+
+	#if RuleShowMsg
+		//测试用
+		memset(s_mstr,0,sizeof(s_mstr));
+		for (rulepos=0;rulepos<rulecount;rulepos++)
+		{
+			sprintf(scsj,"%s\n",salecom[rulecom[rulepos]].code);
+			strcat(s_mstr,scsj);
+		}
+		MessageBox(s_mstr);
+	#endif //#if RuleShowMsg
+	}
+
+#if WriteDebugLog
+	sprintf(s_str,"小票[%07ld]开始计算",salehead.fphm);
+	WritePosError(s_str);
+#endif //#if WriteDebugLog
+
+	//查规则促销的信息
+	for (rulepos = 0;rulepos < rulecount + 1;rulepos ++)
+//	for (i=0;i<old_salecom_num+1;i++)
+	{
+		i = rulecom[rulepos];
+		//只有正常商品才参加规则促销, jiangwenqiang 2012-5-18 13:33:53 修改,允许输入的电子称条码进入判断
+//		if (i != old_salecom_num && salecom[i].flag != '4' && salecom[i].flag != '2')
+		if (rulepos != rulecount && salecom[i].flag != '4' && salecom[i].flag != '2')
+		{
+//			char str[100+1];
+//			sprintf(str,"商品[%s]不是正常商品,不能参与规则促销",salecom[i].barcode);
+//			MessageBox(str);
+			continue; 
+		}	
+		//判断是否曾参与规则促销
+//		if (i != old_salecom_num && cominfo[i].infostr1[1] == 'N')
+		if (rulepos != rulecount && cominfo[i].infostr1[1] == 'N')
+		{
+//			char str[100+1];
+//			sprintf(str,"商品[%s]不能参与规则促销",salecom[i].code);
+//			MessageBox(str);
+			continue;
+		}
+		
+		memset(scsj,0,20);
+		memset(&yh,0,sizeof(SalePromotionDef));
+		//查找整单的规则优惠
+//		if (i == old_salecom_num)
+		if (rulepos == rulecount)
+		{
+			strcpy(salecom[salecom_num].code,"ALL");
+			sprintf(salecom[salecom_num].gz,"%-.2f",CalculateCSComYsje());
+			strcpy(salecom[salecom_num].dzxl,"");
+			strcpy(salecom[salecom_num].pp,"");
+			strcpy(salecom[salecom_num].spec,"");
+
+		#if WriteDebugLog
+			sprintf(s_str,"[%d]商品[%s][%s]开始找到促销单",i+1,salecom[i].barcode,salecom[i].code);
+			WritePosError(s_str);
+		#endif //#if WriteDebugLog
+
+			//有规则促销
+			if (!FindSalePromotionRuleEx(&salecom[salecom_num],salehead.rqsj,scsj,salehead.hykh,yh)) 
+			{
+			#if WriteDebugLog
+				sprintf(s_str,"[%d]商品[%s]未找到促销单",i+1,salecom[i].code);
+				WritePosError(s_str);
+			#endif //#if WriteDebugLog
+
+			#if RuleShowMsg
+				char str[100+1];
+				sprintf(str,"整单[%s]没有找到整单优惠",salecom[i].code);
+				MessageBox(str);
+			#endif //#if RuleShowMsg
+				continue;
+			}
+			else
+			{
+			#if RuleShowMsg
+				char str[100+1];
+				sprintf(str,"整单[%s]取到优惠单据编号[%s]",salecom[i].code,yh.djbh);
+				MessageBox(str);
+			#endif //#if RuleShowMsg
+			}
+		}
+		else
+		{
+			//已经查过的商品无需重复查规则促销
+//			for (k=0;k<i;k++)
+//			{
+//				if (strcmp(salecom[k].code,salecom[i].code) == 0 &&
+//					strcmp(salecom[k].gz,salecom[i].gz) == 0 &&
+//					strcmp(salecom[k].spec,salecom[i].spec) == 0) break;
+//			}
+//			if (k < i) continue;
+			if (rulepos > 0 && strcmp(salecom[rulecom[rulepos-1]].code,salecom[i].code) == 0 &&
+					strcmp(salecom[rulecom[rulepos-1]].gz,salecom[i].gz) == 0 &&
+					strcmp(salecom[rulecom[rulepos-1]].spec,salecom[i].spec) == 0) continue;
+
+		#if WriteDebugLog
+			sprintf(s_str,"[%d]商品[%s]开始找到促销单",i+1,salecom[i].code);
+			WritePosError(s_str);
+		#endif //#if WriteDebugLog
+
+			//有规则促销
+			if (!FindSalePromotionRuleEx(&salecom[i],salehead.rqsj,scsj,salehead.hykh,yh))
+			{
+			#if WriteDebugLog
+				sprintf(s_str,"[%d]商品[%s][%s]未找到促销单",i+1,salecom[i].barcode,salecom[i].code);
+				WritePosError(s_str);
+			#endif //#if WriteDebugLog
+			
+			#if RuleShowMsg
+				char str[100+1];
+				sprintf(str,"[%d]商品[%s][%s]没有取到优惠单据",i+1,salecom[i].barcode,salecom[i].code);
+				MessageBox(str);
+			#endif //#if RuleShowMsg
+				continue;
+			}
+			else
+			{
+			#if RuleShowMsg
+				char str[100+1];
+				sprintf(str,"[%d]商品[%s][%s]取到优惠单据编号[%s]",i+1,salecom[i].barcode,salecom[i].code,yh.djbh);
+				MessageBox(str);
+			#endif //#if RuleShowMsg	
+			}
+		}
+	#if WriteDebugLog
+		sprintf(s_str,"[%d]商品[%s]找到促销单[%s]",i+1,salecom[i].code,yh.djbh);
+		WritePosError(s_str);
+	#endif //#if WriteDebugLog
+
+		//检查该单据是否已经运算过，如果已经运行过则无需重复运算
+		for (k=0;k<NotRuleNum;k++)
+		{
+			if (strcmp(NotRuleDjbh[k].gz,yh.djbh) == 0) break;
+		}
+		if (k < NotRuleNum) continue;
+
+		//初始化参数
+		rulepop_num = 0;
+		rulemx_num = 0;
+
+	#if WriteDebugLog
+		sprintf(s_str,"开始查找促销单[%s]的明细",yh.djbh);
+		WritePosError(s_str);
+	#endif //#if WriteDebugLog
+
+		//获取规则促销的条件和优惠结果
+		if (!FindSalePromotionRuleMxEx(yh.djbh,DoubleToLong(yh.yhspace)) || rulepop_num <= 0 || rulemx_num <= 0)
+		{
+		#if WriteDebugLog
+			sprintf(s_str,"促销单[%s]的明细查找失败[%d],[%d]",yh.djbh,rulepop_num,rulemx_num);
+			WritePosError(s_str);
+		#endif //#if WriteDebugLog
+
+		#if RuleShowMsg			
+			char str[100+1];
+			sprintf(str,"促销单[%s]的明细查找失败[%d],[%d]",yh.djbh,rulepop_num,rulemx_num);
+			MessageBox(str);
+		#endif //#if RuleShowMsg	
+			continue;
+		}
+	#if RuleShowMsg			
+		char str[100+1];
+		sprintf(str,"促销单[%s]条件[%d]条,结果[%d]条",yh.djbh,rulepop_num,rulemx_num);
+		MessageBox(str);
+	#endif //#if RuleShowMsg	
+		
+	#if WriteDebugLog
+		sprintf(s_str,"促销单[%s]明细查找完成，开始计算",yh.djbh);
+		WritePosError(s_str);
+	#endif //#if WriteDebugLog
+	
+		//初始化条件参数
+		for (k=0;k<salecom_num;k++)
+		{
+			cominfo[k].infostr1[5] = ' ';
+			//标志为A表示在上一轮规则中被条件排除的商品，因此可以参与本轮规则促销
+			if (cominfo[k].infostr1[1] == 'A') cominfo[k].infostr1[1] = 'Y';
+		}
+		
+		for (j=0;j<rulepop_num;j++)
+		{
+			for (k=0;k<salecom_num;k++)
+			{
+				//商品是否条件匹配
+				if (IsMatchCommod(&rulepoplist[j],k))
+				{
+					cominfo[k].infostr1[5] = 'Y';//表示条件满足
+				}
+			}
+		}
+		
+		//先将规则条件中要排除的商品排除掉
+		for (j=0;j<rulepop_num;j++)
+		{
+			//presentsl为1表示该条件是排除的。
+			if (DoubleToLong(rulepoplist[j].presentsl) == 1)
+			{
+				for (k=0;k<salecom_num;k++)
+				{
+					//商品是否条件匹配
+					if (cominfo[k].infostr1[5] == 'Y' && IsMatchCommod(&rulepoplist[j],k))
+					{
+						//将排除商品的标志置为N,表示不参与规则促销
+						if (rulepoplist[j].istjn[0] == '0') //排除条件
+							cominfo[k].infostr1[5] = ' ';
+						else if (rulepoplist[j].istjn[0] == '1') //排除结果
+							cominfo[k].infostr1[5] = 'N';
+						else //条件和结果都排除
+						{
+							cominfo[k].infostr1[5] = ' ';
+							cominfo[k].infostr1[1] = 'A';
+						}
+					}
+				}
+				//如果是排除条件。那么无论结果是排除条件还是排除结果都不纳入条件计算 
+				//例如,单据是一行类别的条件和一行排除结果的条件，如果此处不删除排除结果的那一行数据，
+				//并且输入的商品中没有买这个排除结果的商品，会导致后面计算AND条件的时候算出倍数为0的情况。2011-5-20 11:28:45 jiangwenqiang				
+				//如果是排除条件，则需将条件从条件列表中删除，这样是为了后面算多级
+				//if (rulepoplist[j].istjn[0] == '0' || rulepoplist[j].istjn[0] == '2')
+				//				{
+				for (l=j+1;l<rulepop_num;l++)
+					rulepoplist[l-1] = rulepoplist[l];
+				rulepop_num--;
+				j--;
+				//				}
+			}
+//			else
+//			{
+//				//些处解决当如果同时存在满减促销和普通促销，且为满减促销为不折上折的情况时，小票上购买同时购买促销和非促销商品时，非促销商品达到额度限制也无法取到满减优惠信息。
+//				//例：促销单（附件20110218.rar为今日生成的脱网数据包）102018200000001 和规则促销单102018S00000012 同时存在时，如果购买商品2件340427和25件349949 商品时，即使340419 不参加任何促销，且应付总额达到满减条件（达100元减10元）时，POS也没有执行减10元的优惠
+//				//原因：340427和349949同属一个类别，该规则促销单为该类别满100减10元
+//				//结果为非折上折时，将条件中有折扣的商品排除
+//				if (rulemxlist[0].iszsz[0] != '1' && i < old_salecom_num)
+//				{
+//					for (k=0;k<salecom_num;k++)
+//					{
+//						//商品是否条件匹配
+//						if (cominfo[k].infostr1[5] == 'Y' && IsMatchCommod(&rulepoplist[j],k))
+//						{
+//							//如果
+//							if (FloatCmp(salecom[i].yhzke + salecom[i].hyzke + salecom[i].plzke,0,2) > 0 && FloatCmp(salecom[k].yhzke + salecom[k].hyzke + salecom[k].plzke,0,2) <= 0 ||
+//								FloatCmp(salecom[i].yhzke + salecom[i].hyzke + salecom[i].plzke,0,2) <= 0 && FloatCmp(salecom[k].yhzke + salecom[k].hyzke + salecom[k].plzke,0,2) > 0
+//								)
+//							{
+//								cominfo[k].infostr1[5] = ' ';
+//								cominfo[k].infostr1[1] = 'A';
+//							}
+//						}
+//					}
+//				}
+//			}
+		}
+		minbs = 0;
+		zje = 0;
+
+		for (n=0;n<rulepoplist[0].jc;n++)
+		{
+			t_minbs = 0;
+			t_zje = 0;
+
+			//得到当前级次
+			GetCurRuleJc(n+1);
+
+			//匹配规则条件中属于必须满足的条件
+			for (l=0,j=0;j<rulepop_num;j++)
+			{
+				//条件为AND
+				if (DoubleToLong(rulepoplist[j].presentjs) == 1)
+				{
+					l++;
+					je = 0;
+					for (k=0;k<salecom_num;k++)
+					{
+						//商品是否条件匹配
+						if ((cominfo[k].infostr1[5] == 'Y' || cominfo[k].infostr1[5] == 'N') && IsMatchCommod(&rulepoplist[j],k))
+						{
+							//yhhyj = 0，表示yhlsj中记录的是数量
+							//yhhyj = 1，表示yhlsj中记录的是金额
+							if (DoubleToLong(rulepoplist[j].yhhyj) == 0)
+								je += salecom[k].sl;
+							else
+								je += salecom[k].zje - salecom[k].yhzke - salecom[k].hyzke - salecom[k].plzke;
+//							此处如果该变cominfo[k].infostr1[5] = 'A',在计算第2级别的时候,程序不能进入上面的IF条件进行统计，导致无法计算一级以上的级别
+//							避免后面的or判断时又找到该条件
+//							cominfo[k].infostr1[5] = 'A';
+						}
+					}
+//					char str[100+1];
+//					sprintf(str,"现有=[%lf],条件=[%lf]",je,rulepoplist[j].yhlsj);
+//					MessageBox(str,"and");
+
+					bs = 0;
+					if (FloatCmp(je,rulepoplist[j].yhlsj,2) >= 0 && FloatCmp(rulepoplist[j].yhlsj,0,2) > 0)
+					{
+						bs = DoubleToLong(je / rulepoplist[j].yhlsj);			
+					}
+					if (l == 1)
+						t_minbs = bs;
+					else
+						t_minbs = t_minbs>bs?bs:t_minbs;
+
+					t_zje += je;
+				}
+			}
+			//有必须全满足的条件，并且未全满足时，则认为条件不满足
+			if (l > 0 && t_minbs <= 0)
+			{
+				//还原上一级
+				if (n > 0) GetCurRuleJc(n);
+//				sprintf(s_mstr,"l=%d,t_minbs=%d,jc=%d",l,t_minbs,n);
+//				MessageBox(s_mstr,"不满足");
+				break;
+			}
+			//匹配规则条件中属于非必须满足的条件
+			for (je=0,m=-1,j=0;j<rulepop_num;j++)
+			{
+				//条件为OR
+				if (DoubleToLong(rulepoplist[j].presentjs) == 0)
+				{
+					m = j;
+					for (k=0;k<salecom_num;k++)
+					{
+					#if RuleShowMsg
+						char str[100+1];
+						sprintf(str,"cominfo[%d].infostr1[5]=[%c]",k,cominfo[k].infostr1[5]);
+						MessageBox(str,"or");					
+					#endif
+						//商品是否条件匹配
+						if ((cominfo[k].infostr1[5] == 'Y' || cominfo[k].infostr1[5] == 'N') && IsMatchCommod(&rulepoplist[j],k))
+						{
+							//yhhyj = 0，表示yhlsj中记录的是数量
+							//yhhyj = 1，表示yhlsj中记录的是金额
+							if (FloatCmp(rulepoplist[j].yhhyj,0,2) == 0)
+								je += salecom[k].sl;
+							else
+								je += salecom[k].zje - salecom[k].yhzke - salecom[k].hyzke - salecom[k].plzke;
+						}
+					}
+				#if RuleShowMsg
+					char str[100+1];
+					sprintf(str,"现有=[%lf],条件=[%lf]",je,rulepoplist[j].yhlsj);
+					MessageBox(str,"or");					
+				#endif
+				}
+			}	
+			t_zje += je;
+
+		#if RuleShowMsg			
+			char str[100+1];
+			sprintf(str,"现有=[%lf],m=%d,条件=[%lf]",je,m,m>=0?rulepoplist[m].yhlsj:0);
+			MessageBox(str,"or");					
+		#endif
+			
+			//计算or条件的倍数
+			if (m >= 0 && FloatCmp(je,rulepoplist[m].yhlsj,2) >= 0 && FloatCmp(rulepoplist[m].yhlsj,0,2) > 0)
+			{
+				bs = DoubleToLong(je / rulepoplist[m].yhlsj);
+				if (l > 0)
+					t_minbs = t_minbs>bs?bs:t_minbs;
+				else
+					t_minbs = bs;
+			}
+			if (t_minbs > 0)
+			{
+				minbs = t_minbs;
+				zje = t_zje;
+			}
+			else
+			{
+				//还原上一级
+				if (n > 0) GetCurRuleJc(n);
+				break;
+			}
+		}
+//		sprintf(s_mstr,"minbs=%d",minbs);
+//		MessageBox(s_mstr);
+
+		//有必须全满足的条件，并且未全满足时，则认为条件不满足
+		if (minbs <= 0)
+		{
+		
+		#if RuleShowMsg			
+			char str[100+1];
+			sprintf(str,"商品[%s]不满足促销规则[%s]\n\n循环下一个商品",salecom[i].code,yh.djbh);
+			MessageBox(str);
+		#endif //#if RuleShowMsg	
+		
+		#if WriteDebugLog
+			sprintf(s_str,"[%s]在单据[%s]中不满足倍数",salecom[i].code,yh.djbh);
+			WritePosError(s_str);
+		#endif //#if WriteDebugLog
+
+			//记录下不匹配的单据号，以便后面的商品再找到该单据时不用再次进行匹配运算
+			strcpy(NotRuleDjbh[NotRuleNum].gz,yh.djbh);
+			NotRuleNum++;
+			continue;
+		}
+		else
+		{
+		
+		#if RuleShowMsg
+			char str[100+1];
+			sprintf(str,"商品[%s]在单据[%s]中满足的倍数为[%d]",salecom[i].code,yh.djbh,minbs);
+			MessageBox(str);	
+		#endif //#if RuleShowMsg			
+			
+		#if WriteDebugLog
+			sprintf(s_str,"[%s]在单据[%s]中满足的倍数为%d",salecom[i].code,yh.djbh,minbs);
+			WritePosError(s_str);
+		#endif //#if WriteDebugLog
+		
+		}		
+		
+		//ppistr5中的第1个字符为1时，表示1倍封顶
+		if (rulepoplist[0].ppistr5[0] == '1') minbs = 1;
+
+		//计算促销的结果
+		for (j=0;j<rulemx_num;j++)
+		{
+			//商品优惠 商品优惠对应 一级商品 也对应多级的商品
+			if (rulemxlist[j].yhdjlb == 'A' || rulemxlist[j].yhdjlb == 'E')
+			{
+				double yhsl = minbs * rulemxlist[j].yhhyj;//优惠数量
+				double yhje = FloatConvert(minbs * rulemxlist[j].yhlsj,2);
+//				double yhxl = minbs * rulemxlist[j].yhhyj;//优惠限量
+//				sprintf(s_mstr,"yhsl:%.2f,yhpfj:%G,type:%c,code:%s,zje:%G,yhje:%G,yhlsj:%.2f",yhsl,rulemxlist[j].yhhyj,rulemxlist[j].type,rulemxlist[j].code,zje,yhje,rulemxlist[j].yhlsj);
+//				MessageBox(s_mstr);
+
+				//结果为OR关系的时候 按照第一个结果的优惠数量来优惠剩余商品
+				if (DoubleToLong(rulemxlist[j].presentjs) == 0)
+				{
+					if (j == 0)
+						or_yhsl = yhsl;
+					else
+						yhsl = or_yhsl;
+				}
+//				sprintf(s_mstr,"rulemxlist[%d].yhlsj=[%.2f]",j,rulemxlist[j].yhlsj);
+//				MessageBox(s_mstr);
+
+				for (k=0;k<salecom_num && FloatCmp(yhsl,0,4) > 0;k++)
+				{
+					//商品是否结果匹配 排除结果
+					if (IsMatchCommod(&rulemxlist[j],k) && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A'))
+					{
+//						sprintf(s_mstr,"[%s][%ld][%.2f]",salecom[k].barcode,DoubleToLong(rulemxlist[j].presentjg),rulemxlist[j].yhlsj);
+//						MessageBox(s_mstr,"匹配的商品1");
+						//商品拆分
+						if (FloatCmp(salecom[k].sl,yhsl,4) <= 0)
+						{
+							yhsl -= salecom[k].sl;
+							or_yhsl -= salecom[k].sl;
+						}
+						else
+						{
+							//拆分商品行
+							SplitSalecommod(k,yhsl);
+							yhsl = 0;
+							or_yhsl = 0;
+						}
+						double misszke = 0;
+						//整单满减
+						if (yh.type == '8')
+						{
+							misszke = salecom[k].yhzke + salecom[k].hyzke + salecom[k].plzke + salecom[k].rulezke;//记录可能被清零的折扣额
+						}
+						else
+						{
+							misszke = salecom[k].yhzke + salecom[k].hyzke + salecom[k].plzke;//记录可能被清零的折扣额
+						}
+						//取价方式判断
+						if (DoubleToLong(rulemxlist[j].presentjg) == 0)//取价方式 取价格
+						{
+							//如果是折上折，那么折后金额 = 一般优惠后的金额 * 现在的规则定价 /商品本身的价格
+							if (rulemxlist[j].iszsz[0] == '1')
+							{
+								if (yh.type == '8')
+								{
+									salecom[k].mjzke = FloatConvert(salecom[k].zje - ZZK(salecom[k]),2) - FloatConvert(salecom[k].sl * rulemxlist[j].yhlsj,2);
+									CalcComZkxe(k,salecom[k].mjzke);
+
+									strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+									salecom[k].mjzkfd = rulemxlist[j].zkfd;
+									//cominfo[k].yhtype=rulemxlist[j].type;
+									//统计当前规则促销的折扣金额
+									ruleyhje += salecom[k].mjzke;	
+								}
+								else
+								{
+									salecom[k].rulezke = FloatConvert(salecom[k].zje - ZZK(salecom[k]),2) - FloatConvert(salecom[k].sl * rulemxlist[j].yhlsj,2);
+									CalcComZkxe(k,salecom[k].rulezke);
+
+									strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+									salecom[k].rulezkfd = rulemxlist[j].zkfd;
+									//cominfo[k].yhtype=rulemxlist[j].type;
+									//统计当前规则促销的折扣金额
+									ruleyhje += salecom[k].rulezke;	
+								}
+							}
+							else
+							{
+								if (yh.type == '8')
+								{
+									salecom[k].mjzke = FloatConvert(salecom[k].zje - ZZK(salecom[k]) + salecom[k].yhzke + salecom[k].hyzke + salecom[k].plzke + salecom[k].rulezke,2) - FloatConvert(salecom[k].sl * rulemxlist[j].yhlsj,2);
+									if (salecom[k].mjzke > misszke)//如果规则优惠大于一般优惠，一般优惠清零
+									{
+										salecom[k].yhzke = 0;
+										salecom[k].hyzke = 0;
+										salecom[k].plzke = 0;
+										salecom[k].spzkfd =0;
+										salecom[k].yhzkfd =0;
+										salecom[k].rulezke =0;
+										salecom[k].rulezkfd =0;
+										memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+										memset(salecom[k].ruledjbh,0,sizeof(salecom[k].ruledjbh));
+										strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+										CalcComZkxe(k,salecom[k].mjzke);
+										salecom[k].mjzkfd = rulemxlist[j].zkfd;
+										//cominfo[k].yhtype=rulemxlist[j].type;
+										//统计当前规则促销的折扣金额
+										ruleyhje += salecom[k].mjzke - misszke;	
+									}
+									else
+									{
+										salecom[k].mjzke = 0;
+									}
+								}
+								else
+								{
+									salecom[k].rulezke = FloatConvert(salecom[k].zje - ZZK(salecom[k]) + salecom[k].yhzke + salecom[k].plzke + salecom[k].hyzke,2) - FloatConvert(salecom[k].sl * rulemxlist[j].yhlsj,2);
+
+									if (salecom[k].rulezke > misszke)//如果规则优惠大于一般优惠，一般优惠清零
+									{
+										salecom[k].yhzke = 0;
+										salecom[k].hyzke = 0;
+										salecom[k].plzke = 0;
+										salecom[k].spzkfd =0;
+										salecom[k].yhzkfd =0;
+										memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+										strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+										CalcComZkxe(k,salecom[k].rulezke);
+										salecom[k].rulezkfd = rulemxlist[j].zkfd;
+										//cominfo[k].yhtype=rulemxlist[j].type;
+										//统计当前规则促销的折扣金额
+										ruleyhje += salecom[k].rulezke-misszke;	
+									}
+									else
+									{
+										salecom[k].rulezke = 0;
+									}
+								}
+							}
+						}
+						else if (DoubleToLong(rulemxlist[j].presentjg) == 1)//取折扣率
+						{
+							if (rulemxlist[j].iszsz[0] == '1')
+							{
+								if (yh.type == '8')
+								{
+									salecom[k].mjzke = 0;
+									salecom[k].mjzke = FloatConvert(salecom[k].zje-ZZK(salecom[k]),2)-FloatConvert((salecom[k].zje-ZZK(salecom[k]))*rulemxlist[j].yhlsj,2);
+									CalcComZkxe(k,salecom[k].mjzke);
+
+									strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+									salecom[k].mjzkfd = rulemxlist[j].zkfd;
+									//统计当前规则促销的折扣金额
+									ruleyhje += salecom[k].mjzke;
+								}
+								else
+								{
+									salecom[k].rulezke = 0;
+									salecom[k].rulezke = FloatConvert(salecom[k].zje-ZZK(salecom[k]),2)-FloatConvert((salecom[k].zje-ZZK(salecom[k]))*rulemxlist[j].yhlsj,2);
+									CalcComZkxe(k,salecom[k].rulezke);
+									strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+									salecom[k].rulezkfd = rulemxlist[j].zkfd;
+									//统计当前规则促销的折扣金额
+									ruleyhje += salecom[k].rulezke;	
+								}
+							}
+							else
+							{
+								if (yh.type == '8')
+								{
+									salecom[k].mjzke = 0;
+									salecom[k].mjzke = FloatConvert(salecom[k].zje-ZZK(salecom[k])+misszke,2)-FloatConvert((salecom[k].zje-ZZK(salecom[k]) + misszke)*rulemxlist[j].yhlsj,2);
+
+//									sprintf(s_mstr,"[%G][%G][%G]",salecom[k].rulezke,misszke,rulemxlist[j].yhlsj);
+//									MessageBox(s_mstr,"匹配的商品2");
+
+									if (salecom[k].mjzke > misszke)//如果规则优惠大于一般优惠，规则优惠额记录规则优惠额跟一般优惠额的差额
+									{
+										salecom[k].yhzke = 0;
+										salecom[k].hyzke = 0;
+										salecom[k].plzke = 0;
+										salecom[k].spzkfd =0;
+										salecom[k].yhzkfd =0;//清除普通优惠和会员优惠
+										salecom[k].rulezke = 0;
+										salecom[k].rulezkfd =0;
+										memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+										memset(salecom[k].ruledjbh,0,sizeof(salecom[k].ruledjbh));
+										CalcComZkxe(k,salecom[k].mjzke);
+										strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+										salecom[k].mjzkfd = rulemxlist[j].zkfd;
+										//统计当前规则促销的折扣金额
+										ruleyhje += salecom[k].mjzke-misszke;		
+									}
+									else
+									{
+										salecom[k].mjzke = 0;
+									}
+								}
+								else
+								{
+									salecom[k].rulezke = 0;
+									salecom[k].rulezke = FloatConvert(salecom[k].zje-ZZK(salecom[k]) + misszke,2)-FloatConvert((salecom[k].zje-ZZK(salecom[k]) + misszke)*rulemxlist[j].yhlsj,2);
+
+//									sprintf(s_mstr,"[%G][%G][%G]",salecom[k].rulezke,misszke,rulemxlist[j].yhlsj);
+//									MessageBox(s_mstr,"匹配的商品2");
+
+									if (salecom[k].rulezke > misszke)//如果规则优惠大于一般优惠，规则优惠额记录规则优惠额跟一般优惠额的额
+									{
+										salecom[k].yhzke = 0;
+										salecom[k].hyzke = 0;
+										salecom[k].plzke = 0;
+										salecom[k].spzkfd =0;
+										salecom[k].yhzkfd =0;//清除普通优惠和会员优惠
+										memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+										CalcComZkxe(k,salecom[k].rulezke);
+										strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+										salecom[k].rulezkfd = rulemxlist[j].zkfd;
+										//统计当前规则促销的折扣金额
+										ruleyhje += salecom[k].rulezke-misszke;		
+									}
+									else
+									{
+										salecom[k].rulezke = 0;
+									}
+								}				
+							}
+						}
+						else if (DoubleToLong(rulemxlist[j].presentjg) == 2)//取折扣额
+						{
+							if (rulemxlist[j].iszsz[0] == '1')
+							{
+								if (yh.type == '8')
+								{
+									salecom[k].mjzke  = rulemxlist[j].yhlsj;
+									CalcComZkxe(k,salecom[k].mjzke);
+
+									strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+									salecom[k].mjzkfd =rulemxlist[j].zkfd;
+									ruleyhje += salecom[k].mjzke;//统计规则促销的折扣金额
+								}
+								else
+								{	
+									salecom[k].rulezke  = rulemxlist[j].yhlsj;
+									CalcComZkxe(k,salecom[k].rulezke);
+
+									strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+									salecom[k].rulezkfd =rulemxlist[j].zkfd;
+									ruleyhje += salecom[k].rulezke;//统计规则促销的折扣金额
+								}
+							}
+							else
+							{
+								if (yh.type == '8')
+								{
+									salecom[k].mjzke  = rulemxlist[j].yhlsj;
+
+									if (salecom[k].mjzke > misszke)//如果规则优惠大于一般优惠，规则优惠额记录规则优惠额跟一般优惠额的差额
+									{
+										salecom[k].yhzke = 0;
+										salecom[k].hyzke = 0;
+										salecom[k].plzke = 0;
+										salecom[k].spzkfd =0;
+										salecom[k].yhzkfd =0;//清除普通优惠和会员优惠
+										salecom[k].rulezke = 0;
+										salecom[k].rulezkfd =0;
+										memset(salecom[k].ruledjbh,0,sizeof(salecom[k].ruledjbh));
+										memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+										CalcComZkxe(k,salecom[k].mjzke);
+										strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+										salecom[k].mjzkfd =rulemxlist[j].zkfd;
+										ruleyhje += salecom[k].mjzke - misszke;//统计规则促销的折扣金额	
+									}
+									else
+									{
+										salecom[k].mjzke = 0;
+									}
+								}
+								else
+								{
+									salecom[k].rulezke  = rulemxlist[j].yhlsj;
+
+									if (salecom[k].rulezke>misszke)//如果规则优惠大于一般优惠，规则优惠额记录规则优惠额跟一般优惠额的差额
+									{
+										salecom[k].yhzke = 0;
+										salecom[k].hyzke = 0;
+										salecom[k].plzke = 0;
+										salecom[k].spzkfd =0;
+										salecom[k].yhzkfd =0;//清除普通优惠和会员优惠
+										memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+										CalcComZkxe(k,salecom[k].rulezke);
+										strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+										salecom[k].rulezkfd =rulemxlist[j].zkfd;
+										ruleyhje += salecom[k].rulezke - misszke;//统计规则促销的折扣金额	
+									}
+									else
+									{
+										salecom[k].rulezke = 0;
+									}
+								}
+							}
+						}
+						else//用于其它用途
+						{
+						}
+						//char buf[100];
+						//sprintf(buf,"yhzke:%f yhlsj:%f,yhhyj:%f",salecom[k].yhzke,rulemxlist[j].yhlsj,rulemxlist[j].yhhyj);
+						//MessageBox(buf);
+
+						cominfo[k].infostr1[5] = 'Y';
+
+						if (k >= winfirst && k < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(k - winfirst,k);
+
+						//显示汇总信息
+						DispPay();
+					}
+				}
+			}
+			//赠品
+			if (rulemxlist[j].yhdjlb == 'B' || rulemxlist[j].yhdjlb == 'F')
+			{
+				//'4'表示买赠，该赠品是小票列表中的正常商品，要将其改成正赠品
+				if (rulemxlist[j].ppistr6[0] == '4')
+				{
+					//赠品数量
+					quantity = minbs * rulemxlist[j].yhlsj;
+
+					for (k=0;k<salecom_num && FloatCmp(quantity,0,4)>0;k++)
+					{
+						//商品是否结果匹配  排除结果
+						if (IsMatchCommod(&rulemxlist[j],k)  && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A'))
+						{
+							//商品拆分
+							if (FloatCmp(salecom[k].sl,quantity,4) <= 0)
+							{
+								quantity -= salecom[k].sl;
+							}
+							else
+							{
+								//拆分商品行
+								SplitSalecommod(k,quantity);
+								quantity = 0;
+							}
+							//将该商品改为赠品
+							salecom[k].flag = '1';
+							strncpy(salecom[k].batch,rulemxlist[j].ppistr6,15);
+							salecom[k].xxtax = FloatConvert(minbs * rulemxlist[j].yhhyj,2);
+							//salecom[k].zszke += salecom[k].zje - ZZK(salecom[k]) - FloatConvert(minbs * rulemxlist[j].yhhyj,2);
+							salecom[k].rulezke += salecom[k].zje - ZZK(salecom[k]) - FloatConvert(minbs * rulemxlist[j].yhhyj,2);
+
+							strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);//记录优惠单据编号
+							salecom[k].rulezkfd = rulemxlist[j].zkfd;
+
+							//如果这个商品有一般促销,在变为赠品的时候讲分期促销的单号去掉
+							//memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));//把原来的优惠单据编号清除
+
+							//该商品的应收金额都记为优惠金额
+							ruleyhje += salecom[k].zszke;
+
+							if (k >= winfirst && k < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(k - winfirst,k);
+
+							//显示汇总信息
+							DispPay();
+						}
+					}
+				}
+				else
+				{
+					if (FindCommod(4,rulemxlist[j].code,rulemxlist[j].gz,curcom) != 1) continue;
+
+					//检查商品个数
+					if (salecom_num >= MAX_SALECOM)
+					{
+						NotRuleDjbh.FreeAll();
+//						delete[] rulecom;
+						return;
+					}
+					//赠品数量
+					quantity = minbs * rulemxlist[j].yhlsj;
+
+					//赠品数量不能为零，因为数量为零会造成小票不能送网
+					if (quantity <= 0) quantity = 1;
+
+					price    = 0;
+					allprice = 0;
+					strcpy(curcom.yhdjbh,rulemxlist[j].djbh);
+
+					curzpflag = 1;                  //赠品标志
+					strncpy(curbatch,rulemxlist[j].ppistr6,15);
+
+					//需要加钱的赠品，钱由前台直接收取
+					if (FloatCmp(minbs * rulemxlist[j].yhhyj,0,2) > 0)
+					{
+						curcom.lsj = FloatConvert((minbs * rulemxlist[j].yhhyj)/quantity,2);
+						price = curcom.lsj;
+					}
+					AddSaleCommod();
+					DispSaleCommod();
+
+					//需要加钱的赠品
+					salecom[salecom_num - 1].xxtax = FloatConvert(minbs * rulemxlist[j].yhhyj,2);
+
+					CreateInputLine(2);
+				}
+			}
+			//返现金
+			if (rulemxlist[j].yhdjlb == 'C')
+			{
+//返现金时，如果有多级，则按最高级算返现金额，不算倍数
+//				if (rulemxlist[j].jc > 1) minbs = 1;
+				double fxje = FloatConvert(minbs * rulemxlist[j].yhhyj,2);
+				memset(&curcom,0,sizeof(CommodDef));
+				//不然会添加成上一个商品的编码
+				strcpy(curbarcode,"911");
+				strcpy(curcom.barcode,"911");
+				strcpy(curcom.code,"911");
+				curcom.type = '1';
+				//根据徐艳春要求返现金的柜组记为：门店号+01
+				sprintf(curcom.gz,"%s01",GSysPara.shopcode);
+				//strcpy(curcom.gz,"0");
+				strcpy(curcom.dzxl,"0");
+				strcpy(curcom.pp,"0");
+				strcpy(curcom.spec,"0");
+				strcpy(curcom.yhdjbh,"0");
+//				if (IsZBCQ())
+//					sprintf(curcom.name,"本次可返现金券%G元",fxje);
+//				else
+					sprintf(curcom.name,"本次可返折扣券%G元",fxje);
+				strcpy(curcom.unit,"元");
+				curcom.bzhl = 1;
+				curcom.xxtax = 0;
+				curcom.zkfd = 0;
+				curcom.isvipzk= 0;
+				curcom.lsj= 0;
+
+				//检查商品个数
+				if (salecom_num >= MAX_SALECOM) 
+				{
+					NotRuleDjbh.FreeAll();
+//					delete[] rulecom;
+					return;
+				}
+				quantity = minbs * rulemxlist[j].yhlsj;
+
+				//赠品数量不能为零，因为数量为零会造成小票不能送网
+				if (quantity <= 0) quantity = 1;
+
+				price = 0;
+				allprice = 0;
+				strcpy(curcom.yhdjbh,rulemxlist[j].djbh);
+				//curcom.bzhl = 1
+				curzpflag = 1;//赠品标志
+				strncpy(curbatch,rulemxlist[j].ppistr6,15);
+
+				AddSaleCommod();
+
+				DispSaleCommod();
+
+				//返现金的赠品
+				salecom[salecom_num - 1].xxtax = 0 -  fxje;
+
+				CreateInputLine(2);
+			}
+			//任意几个定应收金额 只分多级
+			if (rulemxlist[j].yhdjlb == 'X')
+			{
+				if (FloatCmp(zje,rulepoplist[0].yhlsj,2) >= 0 && FloatCmp(rulepoplist[0].yhlsj,0,2) > 0)
+				{
+					double yhje = FloatConvert(minbs * rulemxlist[j].yhlsj,2);
+					long yhsl = minbs * rulepoplist[0].yhlsj;
+					double t_zyhje=0;
+
+//					sprintf(s_mstr,"yhje=[%.2f] yhsl=[%ld] zje=[%.2f] rulepoplist[0].yhlsj=[%.2f]",yhje,yhsl,zje,rulepoplist[0].yhlsj);
+//					MessageBox(s_mstr,"X");
+
+					t_zje = 0;
+					t_zyhje = 0;
+
+					//yhje应小于小票的应收金额，不然话，小票金额有成负数的可能。
+					if (FloatCmp(yhje,saleysje,2) < 0)
+					{
+						int t_maxjerow = -1;
+						long t_yhsl = yhsl;
+						//计算本次参与优惠商品的总金额
+						for (l=0;l<rulepop_num;l++)
+						{
+							for (k=0;k<salecom_num;k++)
+							{
+								if (t_yhsl > 0 && IsMatchCommod(&rulepoplist[l],k) && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A'))
+								{
+									//商品拆分
+									if (FloatCmp(salecom[k].sl,t_yhsl,4) <= 0)
+									{
+										t_yhsl -= (long)salecom[k].sl;
+									}
+									else
+									{
+										//拆分商品行
+										SplitSalecommod(k,t_yhsl);
+										t_yhsl = 0;
+									}
+									//如果是折上折
+									if (rulemxlist[j].iszsz[0] == '1')
+									{
+										t_zje += salecom[k].zje - ZZK(salecom[k]);
+									}
+									else
+									{
+										if (yh.type == '8')
+										{	
+											t_zje +=salecom[k].zje - ZZK(salecom[k]) + salecom[k].yhzke+salecom[k].hyzke+salecom[k].plzke+salecom[k].rulezke;
+											t_zyhje +=salecom[k].yhzke+salecom[k].hyzke+salecom[k].plzke+salecom[k].rulezke;
+										}
+										else
+										{	
+											t_zje +=salecom[k].zje - ZZK(salecom[k]) + salecom[k].yhzke+salecom[k].plzke+salecom[k].hyzke;
+											t_zyhje +=salecom[k].yhzke+salecom[k].hyzke+salecom[k].plzke;
+										}
+									}
+								}
+							}
+						}
+//						sprintf(s_mstr,"yhsl %ld,t_zje %f,t_zyhje %f",yhsl,t_zje,t_zyhje);
+//						MessageBox(s_mstr);
+
+						//计算出优惠金额
+						yhje = t_zje - yhje;
+
+						double t_je=0;
+						//将优惠金额按金额占比分摊到本次参与的商品上面
+						for (l=0;l<rulepop_num;l++)
+						{
+							for (k=0;k<salecom_num;k++)
+							{
+								if (yhsl > 0 && IsMatchCommod(&rulepoplist[l],k) && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A'))
+								{
+									//商品拆分
+									if (FloatCmp(salecom[k].sl,yhsl,4) <= 0)
+									{
+										yhsl -= salecom[k].sl;
+									}
+									else
+									{
+										//拆分商品行
+										SplitSalecommod(k,yhsl);
+										yhsl = 0;
+									}
+									double misszke = 0;
+									if (yh.type == '8')
+									{
+										misszke = salecom[k].yhzke + salecom[k].yhzke + salecom[k].plzke + salecom[k].rulezke;
+									}
+									else
+									{
+										misszke = salecom[k].yhzke + salecom[k].yhzke + salecom[k].plzke;
+									}
+									//根据折上折来判断，如果非折上折，取低价优先
+									if (rulemxlist[j].iszsz[0] == '1')
+									{
+										if (yh.type == '8')
+										{
+											salecom[k].mjzke = 0;
+											salecom[k].mjzke =(salecom[k].zje-ZZK(salecom[k])) / t_zje * yhje;
+											CalcComZkxe(k,salecom[k].mjzke);
+											//记录折扣分担
+											salecom[k].mjzkfd = rulemxlist[j].zkfd;
+											//记录优惠单据编号
+											strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+											//统计当前规则促销的折扣金额
+											ruleyhje += salecom[k].mjzke;
+
+										}
+										else
+										{
+											salecom[k].rulezke = 0;
+											salecom[k].rulezke =(salecom[k].zje-ZZK(salecom[k]))/t_zje * yhje;
+											CalcComZkxe(k,salecom[k].rulezke);
+											//记录折扣分担
+											salecom[k].rulezkfd = rulemxlist[j].zkfd;
+											//记录优惠单据编号
+											strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+											//统计当前规则促销的折扣金额
+											ruleyhje += salecom[k].rulezke;
+										}
+									}
+									else 
+									{
+										if (yhje > t_zyhje)
+										{	
+											if (yh.type == '8')
+											{	
+												salecom[k].mjzke = 0;
+												salecom[k].mjzke=(salecom[k].zje-ZZK(salecom[k]) + misszke) / t_zje * yhje;
+
+												salecom[k].yhzke = 0;
+												salecom[k].hyzke = 0;
+												salecom[k].plzke = 0;
+												salecom[k].spzkfd =0;
+												salecom[k].yhzkfd =0;
+												salecom[k].rulezke =0;
+												salecom[k].rulezkfd =0;
+												memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+												memset(salecom[k].ruledjbh,0,sizeof(salecom[k].ruledjbh));
+												CalcComZkxe(k,salecom[k].mjzke);
+												//记录折扣分担
+												salecom[k].mjzkfd = rulemxlist[j].zkfd;
+												//记录优惠单据编号
+												strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+												//统计当前规则促销的折扣金额
+												ruleyhje += salecom[k].mjzke - misszke;
+
+											}
+											else
+											{
+												salecom[k].rulezke =0;
+												salecom[k].rulezke = (salecom[k].zje-ZZK(salecom[k]) + misszke) / t_zje * yhje;
+
+//												char buf[100];
+//												sprintf(buf,"1-rulezke :%f",salecom[k].rulezke);
+//												MessageBox(buf);
+
+												salecom[k].yhzke = 0;
+												salecom[k].hyzke = 0;
+												salecom[k].plzke = 0;
+												salecom[k].spzkfd =0;
+												salecom[k].yhzkfd =0;
+												memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+												CalcComZkxe(k,salecom[k].rulezke);
+												//记录折扣分担
+												salecom[k].rulezkfd = rulemxlist[j].zkfd;
+												//记录优惠单据编号
+												strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+//											    cominfo[k].yhtype=rulemxlist[j].type;
+												//统计当前规则促销的折扣金额
+												ruleyhje += salecom[k].rulezke - misszke;
+											}
+										}
+										else
+										{
+											t_je = yhje;
+										}
+									}
+//									将参与优惠的商品打上标记
+									cominfo[k].infostr1[5] = 'Y';
+									if (yh.type == '8')
+									{
+										t_je += salecom[k].mjzke;
+									}
+									else
+									{	
+										t_je += salecom[k].rulezke;
+									}
+									if (k >= winfirst && k < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(k - winfirst,k);									
+									//显示汇总信息
+									DispPay();
+									//记下金额最大的行号
+									if (t_maxjerow >= 0 && FloatCmp(salecom[k].zje,salecom[t_maxjerow].zje,2) > 0 || t_maxjerow < 0 )
+										t_maxjerow = k;
+								}
+							}
+							if (yhsl <= 0) break;
+						}
+						if (FloatCmp(fabs(yhje-t_je),0,2) > 0)
+						{
+							if (yh.type == '8')
+							{
+								salecom[t_maxjerow].mjzke += yhje - t_je;
+								CalcComZkxe(t_maxjerow,salecom[t_maxjerow].mjzke);
+							}
+							else
+							{
+								salecom[t_maxjerow].rulezke += yhje - t_je;
+								CalcComZkxe(t_maxjerow,salecom[t_maxjerow].rulezke);
+							}
+							ruleyhje += yhje - t_je;
+							if (t_maxjerow >= winfirst && t_maxjerow < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(t_maxjerow - winfirst,t_maxjerow);
+							//显示汇总信息
+							DispPay();
+						}
+					}
+				}
+				//任意多级的，只判断一个结果
+				break;
+			}
+			//满减促销  满减促销必须都按照分级的情况给出
+			if (rulemxlist[j].yhdjlb == 'G')
+			{
+				double mjje = FloatConvert(minbs * rulemxlist[j].yhlsj,2);
+				double comzje = 0;
+				double t_zyhje = 0;
+
+				//减的金额必须>0
+				if (FloatCmp(mjje,0,2) > 0)
+				{
+					//统计当前满减总金额
+					curmjzje += mjje;
+					sprintf(salehead.thsq,"%-.2f",curmjzje);
+					
+					
+					//统计参与促销的商品的总优惠金额，fys 按应收金额进行分摊，因为应收为0时，不应该分摊减的金额
+					for (l=0;l<rulepop_num;l++)
+					{
+						//presentsl为1表示该条件是排除的。
+						//if (rulepoplist[l].presentsl == 0) t_zyhje = 0; //这行代码是错的，会导致已经参与优惠(分期,规则非整单)的商品金额的优惠金额的统计
+
+						for (k=0;k<salecom_num;k++)
+						{											
+							//if (cominfo[k].infostr1[1] == 'Y' && IsMatchCommod(&rulepoplist[l],&salecom[k]) && cominfo[k].infostr1[10] != 'Y' )							
+							//这里排除条件的应该参与结果计算
+							//if (cominfo[k].infostr1[5] != ' ' && IsMatchCommod(&rulepoplist[l],k) && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A')/* && cominfo[k].infostr1[10] != 'Y'*/)
+							if (IsMatchCommod(&rulepoplist[l],k) && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A')/* && cominfo[k].infostr1[10] != 'Y'*/)							
+							{	
+								//是否折上折
+								if (rulemxlist[j].iszsz[0] == '1')//是
+								{
+									comzje += salecom[k].zje - ZZK(salecom[k]);									
+									t_zyhje += salecom[k].yhzke+salecom[k].hyzke + salecom[k].plzke + salecom[k].rulezke;
+								}
+								else //否
+								{
+									comzje += salecom[k].zje- ZZK(salecom[k]);
+
+									if (yh.type == '8')
+									{
+										t_zyhje += salecom[k].yhzke+salecom[k].hyzke + salecom[k].plzke + salecom[k].rulezke;
+									}
+									else
+									{
+										t_zyhje += salecom[k].yhzke+salecom[k].hyzke + salecom[k].plzke;
+									}
+								}
+								//参与满减促销的标志
+								//cominfo[k].infostr1[5] = 'Y';
+							}
+						}
+					}
+//					char temp[100];
+//					sprintf(temp,"code %s,comzje %f,t_zyhje %f",salecom[i].code,comzje,t_zyhje);
+//					MessageBox(temp);
+
+					int t_maxjerow=-1;
+					double t_je=0;
+
+					//将减的金额分摊到商品明细上
+					for (l=0;l<rulepop_num;l++)
+					{
+						for (k=0;k<salecom_num;k++)
+						{
+							if (IsMatchCommod(&rulepoplist[l],k) && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A')/* && cominfo[k].infostr1[10] != 'Y'*/)
+							{
+								double yhzke = 0;
+								double misszke = 0 ;
+
+								if (yh.type == '8')
+									misszke = salecom[k].yhzke+salecom[k].hyzke+salecom[k].plzke+salecom[k].rulezke;//记录可能被清零的折扣额
+								else
+									misszke = salecom[k].yhzke+salecom[k].hyzke+salecom[k].plzke;//记录可能被清零的折扣额
+
+								//是否折上折
+								if (rulemxlist[j].iszsz[0] == '1')
+								{
+									yhzke = FloatConvert((salecom[k].zje- ZZK(salecom[k]) ) / comzje * mjje,2);
+									
+
+									if (yh.type == '8')
+									{	
+										salecom[k].mjzke = 0;
+										salecom[k].mjzke = yhzke;
+										salecom[k].comstr1[0] = 'Y';//是否参与整单满减
+										CalcComZkxe(k,salecom[k].mjzke);
+
+										strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+										salecom[k].mjzkfd=rulemxlist[j].zkfd;
+										ruleyhje += salecom[k].mjzke;//统计规则促销的折扣金额	
+									}
+									else
+									{
+										salecom[k].rulezke = 0; 
+										salecom[k].rulezke =yhzke;
+										salecom[k].comstr2[0] = 'Y';//是否参与类别满减
+										salecom[k].comstr3[0] = 'N';//表示为参与统计
+										sprintf(salecom[k].comstr2+1,"满%G减%G",rulepoplist[0].yhlsj,rulemxlist[j].yhlsj);
+										strcpy(salecom[k].comstr3+1,rulemxlist[0].djbh);//记录下当前优惠的单号
+										strcpy(salecom[k].comstr4,rulemxlist[0].code);//记录下优惠编码
+										CalcComZkxe(k,salecom[k].rulezke);
+
+										strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+										salecom[k].rulezkfd=rulemxlist[j].zkfd;
+										ruleyhje += salecom[k].rulezke;//统计规则促销的折扣金额	
+									}
+									t_je += yhzke;
+
+//									将参与优惠的商品打上标记
+									cominfo[k].infostr1[5] = 'Y';
+
+//									char buf[100];
+//									sprintf(buf,"yhzke:%f,rulezke:%f,t_je:%f",yhzke,salecom[k].rulezke,t_je);
+//									MessageBox(buf);
+								}
+								else
+								{
+									//比较满减的金额是否比一般促销的金额更低
+									if (FloatCmp(mjje,t_zyhje,2) > 0)
+									{
+										yhzke = FloatConvert( (salecom[k].zje- ZZK(salecom[k])) / comzje * mjje,2);
+
+										//如果是对应的整单满减
+										if (yh.type == '8')
+										{
+											salecom[k].mjzke = 0; 
+											salecom[k].yhzke =0;
+											salecom[k].hyzke =0;
+											salecom[k].plzke =0;
+											salecom[k].yhzkfd=0;
+											salecom[k].spzkfd =0;
+											salecom[k].rulezke =0;
+											salecom[k].rulezkfd =0;
+											memset(salecom[k].ruledjbh,0,sizeof(salecom[k].ruledjbh));
+											memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+
+											salecom[k].mjzke = yhzke;
+											salecom[k].comstr2[1] = 'Y';//是否参与整单满减
+//											char buf[100];
+//											sprintf(buf,"mjzke :%f",salecom[k].mjzke);
+//											MessageBox(buf);
+
+											CalcComZkxe(k,salecom[k].mjzke);
+
+											strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+											salecom[k].mjzkfd = rulemxlist[j].zkfd;
+											ruleyhje += salecom[k].mjzke - misszke;//统计规则促销的折扣金额	
+										}
+										else//对应商品满减
+										{
+											salecom[k].rulezke = 0;
+											salecom[k].yhzke =0;
+											salecom[k].hyzke =0;
+											salecom[k].plzke = 0;
+											salecom[k].yhzkfd=0;
+											salecom[k].spzkfd =0;
+											memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+
+											salecom[k].rulezke = yhzke;
+											salecom[k].comstr2[0] = 'Y';//是否参与类别满减
+											salecom[k].comstr3[0] = 'N';//表示为参与统计
+											sprintf(salecom[k].comstr2+1,"满%G减%G",rulepoplist[0].yhlsj,rulemxlist[j].yhlsj);
+											strcpy(salecom[k].comstr3+1,rulemxlist[0].djbh);//记录下当前优惠的单号
+											strcpy(salecom[k].comstr4,rulemxlist[0].code);//记录下优惠编码
+//											char buf[100];
+//											sprintf(buf,"rulezke :%f",salecom[k].rulezke);
+//											MessageBox(buf);
+
+											CalcComZkxe(k,salecom[k].rulezke);
+
+											strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+											salecom[k].rulezkfd=rulemxlist[j].zkfd;
+
+											ruleyhje += salecom[k].rulezke - misszke;//统计规则促销的折扣金额
+										}
+										t_je += yhzke;
+
+//										strcpy(salecom[k].comstr3+1,rulemxlist[0].djbh);//记录下当前优惠的单号
+										//参与满减促销的标志
+										cominfo[k].infostr1[5] = 'Y';
+									}
+									else
+									{
+										//MessageBox("比较满减的金额是否比一般促销的金额更低");
+										
+										//此处要还原，否则在没有参与满减的情况下也会打印出满减金额
+										curmjzje -= mjje;
+										sprintf(salehead.thsq,"%-.2f",curmjzje);
+
+										t_je = mjje;
+										//参与满减促销的标志
+										cominfo[k].infostr1[5] = ' ';
+
+//										char buf[100];
+//										sprintf(buf,"t_zyhje:%G,mjje:%G,yhe:%G,i:%d,k:%d,old_salecom_num:%d",t_zyhje,mjje,salecom[k].yhzke + salecom[k].hyzke + salecom[k].plzke,i,k,old_salecom_num);
+//										MessageBox(buf);
+
+										//当前规则有促销金额，则将有促销的商品排除掉
+//										if (FloatCmp(t_zyhje,0,2) > 0 && i < old_salecom_num)
+										if (FloatCmp(t_zyhje,0,2) > 0 && rulepos < rulecount)
+										{
+//											sprintf(buf,"t_zyhje:%G,mjje:%G,yhe:%G,i:%d,k:%d,old_salecom_num:%d",t_zyhje,mjje,salecom[k].yhzke + salecom[k].hyzke + salecom[k].plzke,i,k,old_salecom_num);
+//											MessageBox(buf,"N");
+
+//											if (i >= 0) i--;
+											if (rulepos >= 0) rulepos--;
+											if (FloatCmp(salecom[k].yhzke + salecom[k].hyzke + salecom[k].plzke,0,2) > 0)
+											{
+//												sprintf(buf,"t_zyhje:%G,mjje:%G,yhe:%G,i:%d,k:%d,old_salecom_num:%d",t_zyhje,mjje,salecom[k].yhzke + salecom[k].hyzke + salecom[k].plzke,i,k,old_salecom_num);
+//												MessageBox(buf,"Y");
+												//参与满减促销的标志
+												cominfo[k].infostr1[5] = 'Y';
+											}
+										}
+									}
+								}
+								//char temp[100];
+								//sprintf(temp,"yhzke : %f,t_je:%f",salecom[k].yhzke,t_je);
+								//MessageBox(temp);
+
+								//记录满减的规则
+								if (FloatCmp(salecom[k].mjzke,0,2) > 0)
+								{
+									sprintf(salecom[k].comstr1+1,"满%G减%G",rulepoplist[0].yhlsj,rulemxlist[j].yhlsj);
+								}
+								if (k >= winfirst && k < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(k - winfirst,k);
+								//显示汇总信息
+								DispPay();
+								//记下金额最大的行号
+								if (t_maxjerow >= 0 && FloatCmp(salecom[k].zje,salecom[t_maxjerow].zje,2) > 0 || t_maxjerow < 0) t_maxjerow = k;
+							}
+						}
+					}
+					//未分配完的金额分配到金额最大的商品上
+					if (FloatCmp(fabs(mjje-t_je),0,2) > 0)
+					{
+						if (yh.type == '8')
+						{
+							salecom[t_maxjerow].mjzke += mjje - t_je;
+							CalcComZkxe(t_maxjerow,salecom[t_maxjerow].mjzke);
+						}
+						else
+						{
+							salecom[t_maxjerow].rulezke += mjje - t_je;
+							CalcComZkxe(t_maxjerow,salecom[t_maxjerow].rulezke);
+						}
+						ruleyhje += mjje - t_je;
+
+						if (t_maxjerow >= winfirst && t_maxjerow < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(t_maxjerow - winfirst,t_maxjerow);
+
+						//显示汇总信息
+						DispPay();
+					}
+				}
+				//满减只算一条结果
+				break;
+			}
+			//数量促销 数量促销没有折上折(取的单价)，没有分级，取单价
+			if (rulemxlist[j].yhdjlb == 'N')
+			{
+				//flag = 1 是全量优惠
+				//flag = 2 是超量促销
+				//flag = 3 是第n件促销
+				//flag = 4 是整箱促销
+				long flag = DoubleToLong(rulemxlist[j].yhhyj);
+				//统计本单参与优惠的商品数量
+				double kyhsl = 0;
+				for (k=0;k<old_salecom_num;k++)
+				{
+					//条件排除的商品应该参与结果计算
+					if (/*cominfo[k].infostr1[5] != ' ' && */IsMatchCommod(&rulemxlist[j],k) && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A'))
+					{
+						kyhsl += salecom[k].sl;
+						//如果前一个商品已经满足了折扣,
+						//那么第二个商品必须标示为已经参与促销（此处为标示其已经促销的条件）。
+					}
+				}
+//				char temp[100];
+//				sprintf(temp,"flag:%ld,kyhsl:%f",flag,kyhsl);
+//				MessageBox(temp);
+
+				//优惠数量
+				double yhsl = atof(rulemxlist[j].ppistr3);
+				if (FloatCmp(yhsl,0,2) <= 0) yhsl = 1;//防止后面计算时除0错误
+
+				//超量促销
+				if (flag == 2) kyhsl -= yhsl;
+				//第n件促销
+				if (flag == 3) kyhsl = DoubleToLong(kyhsl/yhsl);
+				//整箱促销
+				if (flag == 4)
+				{
+					minbs = DoubleToLong(kyhsl/yhsl);
+					long zyhsl = DoubleToLong(minbs*yhsl);//整箱总的优惠数量
+					kyhsl = kyhsl > zyhsl?zyhsl : kyhsl;
+				}
+//				sprintf(s_mstr,"kyhsl=%G",kyhsl);
+//				MessageBox(s_mstr);
+
+				//开始计算优惠
+				if (FloatCmp(kyhsl,0,2) > 0)
+				{
+					for (k=0;k<old_salecom_num;k++)
+					{
+						if (kyhsl > 0 && IsMatchCommod(&rulemxlist[j],k) && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A'))
+						{
+							//优惠价低于零售价
+							if (salecom[k].lsj > rulemxlist[j].yhlsj && rulemxlist[j].yhlsj > 0)
+							{
+								if (kyhsl >= salecom[k].sl)
+								{
+									kyhsl -= salecom[k].sl;
+								}
+								else
+								{
+									//char buf[100];
+									//sprintf(buf,"kyhsl 2 :%f",kyhsl);
+									//MessageBox(buf);
+									//拆分商品行
+									SplitSalecommod(k,kyhsl);
+									kyhsl = -1;
+								}
+								salecom[k].rulezke =0;
+								double misszke = salecom[k].yhzke+salecom[k].hyzke+salecom[k].plzke;
+								salecom[k].rulezke = FloatConvert(salecom[k].zje-ZZK(salecom[k])+ misszke,2)-FloatConvert(rulemxlist[j].yhlsj*salecom[k].sl,2);
+
+//								char str[100+1];
+//								sprintf(str,"现优惠:[%lf],原优惠:[%lf]",salecom[k].rulezke,misszke);
+//								MessageBox(str);
+
+//								sprintf(str,"现优惠:[%lf],原优惠:[%lf]",salecom[k].rulezke,misszke);
+//								MessageBox(str,"优惠上限");
+
+								//优惠价低于一般促销
+								if (FloatCmp(salecom[k].rulezke,misszke,2) > 0)
+								{
+									salecom[k].yhzke = 0;
+									salecom[k].hyzke = 0;
+									salecom[k].plzke = 0;
+									salecom[k].spzkfd =0;
+									salecom[k].yhzkfd =0;//清除普通优惠和会员优惠
+									memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+									salecom[k].rulezkfd = rulemxlist[j].zkfd;
+									CalcComZkxe(k,salecom[k].rulezke);
+									//记录优惠单据编号
+									strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+
+									ruleyhje += salecom[k].rulezke - misszke;
+
+									if (k >= winfirst && k < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(k - winfirst,k);
+
+									//显示汇总信息
+									DispPay();
+
+									//参与满减促销的标志
+									cominfo[k].infostr1[5] = 'Y';
+								}
+								else salecom[k].rulezke = 0;
+							}
+						}
+					}
+				}
+			}
+			//任意几个定单价 只分多级
+			if (rulemxlist[j].yhdjlb == 'Z')
+			{
+				if (FloatCmp(zje,rulepoplist[0].yhlsj,2) >= 0 && FloatCmp(rulepoplist[0].yhlsj,0,2) > 0)
+				{
+					//参与优惠的商品明细数量
+					long yhsl = minbs * rulepoplist[0].yhlsj;
+
+					for (l=0;l<rulepop_num;l++)	
+					{
+						for (k=0;k<salecom_num;k++)
+						{
+							if (yhsl > 0 && IsMatchCommod(&rulepoplist[l],k) && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A'))
+							{
+								//商品拆分
+								if (FloatCmp(salecom[k].sl,yhsl,4) <= 0)
+								{
+									yhsl -= salecom[k].sl;
+								}
+								else
+								{
+									//拆分商品行
+									SplitSalecommod(k,yhsl);
+
+									yhsl = 0;
+								}
+								double misszke = 0 ;
+//								if (i == old_salecom_num)
+								if (rulepos == rulecount)
+									misszke = salecom[k].yhzke+salecom[k].hyzke+salecom[k].plzke+salecom[k].rulezke;//记录可能被清零的折扣额
+								else
+									misszke = salecom[k].yhzke+salecom[k].hyzke+salecom[k].plzke;//记录可能被清零的折扣额
+
+//								char str[100+1];
+//								
+//								sprintf(str,"可能被清除的折扣额为[%lf]",misszke);
+//								MessageBox(str);
+
+								if (rulemxlist[j].iszsz[0] == '1')
+								{
+//									if (i == old_salecom_num)
+									if (rulepos == rulecount)
+									{	
+										salecom[k].mjzke = 0;
+										salecom[k].mjzke = FloatConvert(salecom[k].zje - ZZK(salecom[k]),2) - FloatConvert(salecom[k].sl * rulemxlist[j].yhlsj,2);
+										CalcComZkxe(k,salecom[k].mjzke);
+										//if(salecom[k].mjzke > misszke)//如果规则优惠大于一般优惠，规则优惠额记录规则优惠额跟一般优惠额的差额
+										//{
+										strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+										salecom[k].mjzkfd =rulemxlist[j].zkfd;
+										//统计当前规则促销的折扣金额
+										ruleyhje += salecom[k].mjzke;		
+										//}										
+									}
+									else
+									{
+										salecom[k].rulezke = 0;
+										salecom[k].rulezke = FloatConvert(salecom[k].zje - ZZK(salecom[k]),2) - FloatConvert(salecom[k].sl * rulemxlist[j].yhlsj,2);										
+
+										CalcComZkxe(k,salecom[k].rulezke);
+
+										//if(salecom[k].rulezke > misszke)//如果规则优惠大于一般优惠，规则优惠额记录规则优惠额跟一般优惠额的差额
+										//{
+										strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+										salecom[k].rulezkfd =rulemxlist[j].zkfd;
+										//统计当前规则促销的折扣金额
+										ruleyhje += salecom[k].rulezke;		
+										//}
+									}
+								}
+								else
+								{
+//									if (i == old_salecom_num)
+									if (rulepos == rulecount)
+									{	
+										salecom[k].mjzke = 0;
+										salecom[k].mjzke = FloatConvert(salecom[k].zje - ZZK(salecom[k]) + misszke,2) - FloatConvert(salecom[k].sl * rulemxlist[j].yhlsj,2);
+
+										if (salecom[k].mjzke > misszke)//如果规则优惠大于一般优惠，规则优惠额记录规则优惠额跟一般优惠额的差额
+										{
+											salecom[k].yhzke = 0;
+											salecom[k].hyzke = 0;
+											salecom[k].plzke = 0;
+											salecom[k].spzkfd =0;
+											salecom[k].yhzkfd =0;
+											salecom[k].rulezke = 0;
+											salecom[k].rulezkfd =0;
+											memset(salecom[k].ruledjbh,0,sizeof(salecom[k].ruledjbh));
+											memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+											CalcComZkxe(k,salecom[k].mjzke);
+											strcpy(salecom[k].mjdjbh,rulemxlist[j].djbh);
+											salecom[k].mjzkfd =rulemxlist[j].zkfd;
+											//统计当前规则促销的折扣金额
+											ruleyhje += salecom[k].mjzke - misszke;
+										}
+										else
+										{
+											salecom[k].mjzke = 0;
+										}
+									}
+									else
+									{
+										salecom[k].rulezke = 0;
+										salecom[k].rulezke = FloatConvert(salecom[k].zje - ZZK(salecom[k]) + misszke,2) - FloatConvert(salecom[k].sl * rulemxlist[j].yhlsj,2);
+
+										if (salecom[k].rulezke > misszke)//如果规则优惠大于一般优惠，规则优惠额记录规则优惠额跟一般优惠额的差额
+										{
+											salecom[k].yhzke = 0;
+											salecom[k].hyzke = 0;
+											salecom[k].plzke = 0;
+											salecom[k].spzkfd =0;
+											salecom[k].yhzkfd =0;
+											memset(salecom[k].yhdjbh,0,sizeof(salecom[k].yhdjbh));
+											strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+											CalcComZkxe(k,salecom[k].rulezke);
+											salecom[k].rulezkfd =rulemxlist[j].zkfd;
+											//统计当前规则促销的折扣金额
+											ruleyhje += salecom[k].rulezke - misszke;
+										}
+										else
+										{
+											salecom[k].rulezke = 0;
+										}
+									}
+								}
+								cominfo[k].infostr1[5] = 'Y';
+
+								if (k >= winfirst && k < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(k - winfirst,k);
+
+								//显示汇总信息
+								DispPay();
+							}
+						}
+						if (yhsl <= 0) break;
+					}
+				}
+				//任意多级的，只判断一个结果
+				break;
+			}
+			//对指定商品固定优惠金额
+			if (rulemxlist[j].yhdjlb == 'V')
+			{
+				double yhsl = minbs * rulemxlist[j].yhhyj;//优惠数量
+				double yhje = FloatConvert(minbs * rulemxlist[j].yhlsj,2);
+//				double yhxl = minbs * rulemxlist[j].yhhyj;//优惠限量
+
+//				sprintf(s_mstr,"yhsl:%.2f,yhpfj:%G,type:%c,code:%s,zje:%G,yhje:%G,yhlsj:%.2f",yhsl,rulemxlist[j].yhhyj,rulemxlist[j].type,rulemxlist[j].code,zje,yhje,rulemxlist[j].yhlsj);
+//				MessageBox(s_mstr);
+
+				//结果为OR关系的时候 按照第一个结果的优惠数量来优惠剩余商品
+				long and_flag = DoubleToLong(rulemxlist[j].presentjs);
+
+//				sprintf(s_mstr,"rulemxlist[%d].yhlsj=[%.2f]",j,rulemxlist[j].yhlsj);
+//				MessageBox(s_mstr);
+				or_yhsl = yhsl;
+//				double misszke = 0;
+				zje = 0;
+				t_zje = 0;
+
+				while (and_flag == 1 || and_flag == 0 && FloatCmp(or_yhsl,0,4) > 0 && j < rulemx_num)
+				{
+					//统计参与优惠金额分配的商品总金额
+					for (k=0;k<salecom_num && FloatCmp(or_yhsl,0,4) > 0;k++)
+					{
+						//商品是否结果匹配
+						if (IsMatchCommod(&rulemxlist[j],k) && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A'))
+						{
+//							sprintf(s_mstr,"[%s][%ld][%.2f]",salecom[k].barcode,DoubleToLong(rulemxlist[j].presentjg),rulemxlist[j].yhlsj);
+//							MessageBox(s_mstr,"匹配的商品1");
+							//商品拆分
+							if (FloatCmp(salecom[k].sl,or_yhsl,4) <= 0)
+							{
+								or_yhsl -= salecom[k].sl;
+							}
+							else
+							{
+								//拆分商品行
+								SplitSalecommod(k,or_yhsl);
+								or_yhsl = 0;
+							}
+							zje += salecom[k].zje;
+							t_zje += salecom[k].zje - ZZK(salecom[k]);
+//							//整单满减
+//							if (yh.type == '8')
+//							{
+//								misszke += salecom[k].yhzke + salecom[k].hyzke + salecom[k].rulezke;//记录可能被清零的折扣额
+//							}
+//							else
+//							{
+//								misszke += salecom[k].yhzke + salecom[k].hyzke;//记录可能被清零的折扣额
+//							}
+						}
+					}
+					if (and_flag == 1) break;
+					j++;
+				}
+				if (FloatCmp(yhje,t_zje,2) > 0) yhje = t_zje;
+
+				//将优惠金额分担到商品明细上
+				if (FloatCmp(zje,0,2) > 0 && FloatCmp(yhje,0,2) > 0 && FloatCmp(zje - yhje,0,2) >= 0)
+				{
+					int maxrow = -1;
+					j = 0;
+					t_zje = 0;
+					while (and_flag == 1 || and_flag == 0 && FloatCmp(yhsl,0,4) > 0 && j < rulemx_num)
+					{
+						for (k=0;k<salecom_num && FloatCmp(yhsl,0,4) > 0;k++)
+						{
+							//商品是否结果匹配
+							if (IsMatchCommod(&rulemxlist[j],k) && !(cominfo[k].infostr1[5] == 'N' || cominfo[k].infostr1[1] == 'A'))
+							{
+								yhsl -= salecom[k].sl;
+
+								je = FloatConvert(salecom[k].zje/zje*yhje,2);
+								if (yh.type == '8')
+								{
+									salecom[k].mjzke += je;
+								}
+								else
+								{
+									salecom[k].rulezke += je;
+								}
+								//记录折扣分担
+								salecom[k].rulezkfd = rulemxlist[j].zkfd;
+								//记录优惠单据编号
+								strcpy(salecom[k].ruledjbh,rulemxlist[j].djbh);
+								cominfo[k].infostr1[5] = 'Y';
+
+								ruleyhje += je;
+								t_zje    += je;
+								if (k >= winfirst && k < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(k - winfirst,k);
+								//显示汇总信息
+								DispPay();
+
+								//记下金额最大的行号
+								if (maxrow >= 0 && FloatCmp(salecom[k].zje,salecom[maxrow].zje,2) > 0 || maxrow < 0 )
+									maxrow = k;
+							}
+						}
+						if (and_flag == 1) break;
+						j++;
+					}
+					//将未分配完的金额分配到金额最大的商品上
+					if (FloatCmp(fabs(yhje - t_zje),0,2) > 0)
+					{
+						k = maxrow;
+						if (yh.type == '8')
+						{
+							salecom[k].mjzke += yhje - t_zje;
+						}
+						else
+						{
+							salecom[k].rulezke += yhje - t_zje;
+						}
+						ruleyhje += yhje - t_zje;
+						if (k >= winfirst && k < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(k - winfirst,k);
+						//显示汇总信息
+						DispPay();
+					}
+				}
+				//或条件时，已经优惠完了，所以要退出
+				if (and_flag == 0) break;
+			}
+		}
+		//将已参与规则促销的商品打上标志
+		for (k=0;k<salecom_num;k++)
+		{
+			//商品是否条件匹配
+			if (cominfo[k].infostr1[5] != ' ')
+			{
+				cominfo[k].infostr1[1] = 'N';
+				cominfo[k].infostr1[5] = ' ';
+			}
+		}
+		//类别为8表示整单满减
+		if (yh.type == '8') break;
+	}
+#if WriteDebugLog
+	strcpy(s_str,"计算完成");
+	WritePosError(s_str);
+#endif //#if WriteDebugLog
+
+	//打印汇总的折扣额
+	if (fabs(ruleyhje) > 0 && GSysSyj.printfs == '1' && (!ISLXSALE(saletype) || GSysPara.lxprint == 'Y'))
+	{
+		//将最后一个商品打印出来
+		if (printflag[old_salecom_num-1]!= 'Y')
+		{
+			PrintSaleLocal(PRT_SECTION_COMMOD,old_salecom_num-1);   //打印商品明细
+			printflag[old_salecom_num-1] = 'Y';
+		}
+		char prtbuf[MAX_PAPER_WIDTH+1];
+		sprintf(prtbuf,"以上商品优惠 %8.2f",ruleyhje);
+		PrinterDraft(prtbuf);
+	}
+	//释放内存
+	NotRuleDjbh.FreeAll();
+	
+//	delete[] rulecom;
+}
+
+//查找规则促销的结果
+int FSaleWindow::FindSalePromotionRuleMxEx(char * djbh,int count)
+{
+	int i,num;
+	SalePromotionDef pyh;
+
+	//释放动态数组的元素
+	rulepop_num = 0;
+	rulepoplist.FreeAll();
+	rulemx_num  = 0;
+	rulemxlist.FreeAll();
+
+	rulepoplist.SetSize(5);
+	rulemxlist.SetSize(5);
+
+	//优先在本地查找
+	FDbase db;
+	long recno;
+	int FoundFlag = TRUE;
+
+	if (!db.OpenDBF(DB_YHCODE))  FoundFlag = FALSE;
+	if (FoundFlag && !db.OpenIDX(IDX_YHDJBH)) FoundFlag = FALSE;
+
+	if (FoundFlag)
+	{
+		//将找到的该单据的所有商品都找出来
+		recno = db.index_search(&recno,djbh);
+		while (recno > 0)
+		{
+			db.go_record(recno);
+			if (!db.isdeleted())
+			{
+				memset(&pyh,0,sizeof(SalePromotionDef));
+				db.ReadDBF(&pyh);
+
+			#if RuleShowMsg
+				char str[100+1];
+				sprintf(str,"pyh.djbh=[%s]djbh=[%s]",pyh.djbh,djbh);
+				MessageBox(str);
+			#endif //#if RuleShowMsg
+
+				if (strcmp(pyh.djbh,djbh)) break;
+
+				if (pyh.yhdjlb == '8')
+				{
+					rulepoplist[rulepop_num] = pyh;
+					rulepop_num++;
+				}
+				else
+				{
+					rulemxlist[rulemx_num] = pyh;
+					rulemx_num++;
+				}
+			}
+			recno = db.find_next();
+		}
+	}
+	db.CloseIDX();
+	db.CloseDBF();
+
+	//本地已经找到则不用再到网上查找
+	if (rulepop_num > 0 && rulemx_num > 0)
+	{
+		//通过后台返回的count来判断本地的数据是否最新
+		if (count > 0)
+		{
+			if (rulepop_num + rulemx_num == count)
+			{
+		#if RuleShowMsg	
+			 	MessageBox("单据明细从本地库中查询到");			
+		#endif //#if RuleShowMsg
+			
+			 	return TRUE;
+			}
+			else //本地数据库有问题，需要重建或重新下载
+			{
+				WriteBaseInfoLog(DB_YHCODE,"",1);
+				SysStatusLine.HaveNewData = 'Y';
+			}
+		}
+		else
+		{
+			return TRUE;
+		}
+	}
+	rulepop_num = 0;
+	rulemx_num  = 0;
+
+	//本地找不到并且当前是联网则再到网上查找
+	if (GSyjStatus.netstatus == 'Y')
+	{
+		struct
+		{
+			char mkt[10+1];
+			char djbh[15+1];
+		} para;
+	
+		memset(&para,0,sizeof(para));
+		strncpy(para.mkt,SysCfg.shopid,10);
+		strncpy(para.djbh,djbh,15);
+
+		SysStatusLine.SaveHlpArea();
+		SysStatusLine.DispHlpText("正在网上查找促销明细信息");
+
+		if (!SendRequestPacketHead(CMD_FINDYHRULEMXEX,1))
+		{
+			SysStatusLine.RestoreHlpArea();
+			return FALSE;
+		}
+		
+		if (!SendRequestPacketData(&para,sizeof(para)))
+		{
+			SysStatusLine.RestoreHlpArea();
+			return FALSE;
+		}
+		num = 0;
+		if (!RecvResultPacketHead(num) || num <= 0)
+		{
+			SysStatusLine.RestoreHlpArea();
+			return FALSE;
+		}
+		for (i=0;i<num;i++)
+		{
+			memset(&pyh,0,sizeof(SalePromotionDef));
+			if (!RecvResultPacketData(&pyh,sizeof(SalePromotionDef)))
+			{
+				SysStatusLine.RestoreHlpArea();
+				return FALSE;
+			}
+			if (pyh.yhdjlb == '8')
+			{
+				rulepoplist[rulepop_num] = pyh;
+				rulepop_num++;
+			}
+			else
+			{
+				rulemxlist[rulemx_num] = pyh;
+				rulemx_num++;
+			}
+		}
+		SysStatusLine.RestoreHlpArea();
+	}
+	if (rulepop_num <= 0 || rulemx_num <= 0) return FALSE;
+
+	return TRUE;
+}
+
+void FSaleWindow::GetCurRuleJc(int jc)
+{
+	int i,j;
+	char s_str1[255+1];//分解出的满金额(数量)
+	char s_str2[255+1];//分解出的优惠金额
+
+	// 获得条件在jc传入值的级别所对应的级别值
+	for (j=0;j<rulepop_num;j++)
+	{
+		memset(s_str1,0,sizeof(s_str1));
+		memset(s_str2,0,sizeof(s_str2));
+		strcpy(s_str1,rulepoplist[j].ppistr1);
+		i=0;
+		while (strlen(s_str1) > 0 && i < jc)
+		{
+			SplitString(s_str1,s_str2,s_str1,'|'); //分解满额 “|”为分隔符
+			if (atof(s_str2) > 0) rulepoplist[j].yhlsj = atof(s_str2);
+			i++;
+		}
+		//		char str[50+1];
+		//		sprintf(str,"满的条件为:%lf",rulepoplist[j].yhlsj);
+		//		MessageBox(str);
+	}
+	for (j=0;j<rulemx_num;j++)
+	{
+		memset(s_str1,0,sizeof(s_str1));
+		memset(s_str2,0,sizeof(s_str2));
+		strcpy(s_str1,rulemxlist[j].ppistr1);
+		i=0;
+		while (strlen(s_str1) > 0 && i < jc)
+		{
+			SplitString(s_str1,s_str2,s_str1,'|'); //分解减额 “|”为分隔符
+			if (atof(s_str2) > 0) rulemxlist[j].yhlsj = atof(s_str2);
+			i++;
+		}
+		//		char str[50+1];
+		//		sprintf(str,"满的条件对应的结果为:%lf",rulemxlist[j].yhlsj);
+		//		MessageBox(str);
+
+		memset(s_str1,0,sizeof(s_str1));
+		memset(s_str2,0,sizeof(s_str2));
+		strcpy(s_str1,rulemxlist[j].ppistr2);
+		i=0;
+		while (strlen(s_str1) > 0 && i < jc)
+		{
+			SplitString(s_str1,s_str2,s_str1,'|'); //分解数量
+			if (atof(s_str2) > 0) rulemxlist[j].yhhyj = atof(s_str2);
+			i++;
+		}
+		//		char str1[50+1];
+		//		sprintf(str1,"满的条件对应的数量为:%lf",rulemxlist[j].yhhyj);
+		//		MessageBox(str1);
+	}
+}
+
+void FSaleWindow::CalcComZkxe(int k,double &zke)
+{
+	if (k < 0 || k >= salecom_num) return;
+
+	if (FloatCmp(salecom[k].zje - ZZK(salecom[k]),0,2) <= 0)
+	{
+		zke = 0;//引用数据类型,将实参清零
+		zke = salecom[k].zje - ZZK(salecom[k]);
+	}
+	//计算价格精度
+	zke = GetConvertRebate(k,zke);
+}
+
+//查找规则促销
+int FindSalePromotionRuleEx(SaleCommodDef * com,char *yhsj,char *scsj,char *hykh,SalePromotionDef &yh)
+{
+	int ret = FALSE;
+	
+	//脱网或本地优先时，先查本地
+	if (GSyjStatus.netstatus != 'Y' || GSysSyj.printxe >= 1)
+	{
+		ret = DbfFindSalePromotionRuleEx(com,yhsj,scsj,hykh,yh);
+	
+		//找不到会员促销就再找非会员促销
+		if (!ret && strlen(hykh) > 0) ret = DbfFindSalePromotionRuleEx(com,yhsj,scsj,"",yh);
+	}
+	
+	//本地找不到时，如果当前是联网状态，则在网上查找
+	if (!ret && GSyjStatus.netstatus == 'Y')
+	{
+		struct
+		{
+			char mkt[10+1];
+			char code[13+1];
+			char gz[20+1];
+			char dzxl[10+1];
+			char pp[6+1];
+			char spec[2+1];
+			char scsj[19+1];
+			char yhsj[19+1];
+			char hykh[20+1];
+		} para;
+		memset(&para,0,sizeof(para));
+		strncpy(para.mkt,SysCfg.shopid,10);
+		strcpy(para.code,com->code);
+		strcpy(para.gz,com->gz);
+		strcpy(para.dzxl,com->dzxl);
+		strcpy(para.pp,com->pp);
+		strcpy(para.spec,com->spec);
+		strcpy(para.scsj,scsj);
+		strcpy(para.yhsj,yhsj);
+		strcpy(para.hykh,hykh);
+
+		//printf("\npara.code=[%s]",para.code);
+		//printf("\npara.gz=[%s]",para.gz);
+		//printf("\npara.dzxl=[%s]",para.dzxl);
+		//printf("\npara.pp=[%s]",para.pp);
+		//printf("\npara.spec=[%s]",para.spec);
+		//printf("\npara.scsj=[%s]",para.scsj);
+		//printf("\npara.yhsj=[%s]",para.yhsj);
+		//fflush(stdout);
+		//getch();
+#if RuleShowMsg			
+		char str[100+1];
+		sprintf(str,"1:%s,2:%s,3:%s,4:%s,5:%s,6:%s,7:%s,8:%s",para.code,para.gz,para.dzxl,para.pp,para.spec,para.scsj,para.yhsj,para.hykh);
+		MessageBox(str,"传入参数");	
+#endif
+		//保存信息提示区
+		SysStatusLine.SaveHlpArea();
+		SysStatusLine.DispHlpText("正在网上查找优惠信息");
+
+		memset(&yh,0,sizeof(SalePromotionDef));
+		ret = SendNetCommand(CMD_FINDYHRULEEX,&para,sizeof(para),&yh,sizeof(SalePromotionDef));
+
+		//printf("\nret=[%d]",ret);
+		//printf("\nyh.djbh=[%s]",yh.djbh);
+		//fflush(stdout);
+		//getch();
+
+		//恢复信息提示区
+		SysStatusLine.RestoreHlpArea();
+		
+		//如果本地未找到，但在网上找到了，则表示本地库需要更新
+		if (ret && GSysSyj.printxe >= 1)
+		{
+			WriteBaseInfoLog(DB_YHCODE,"",1);
+			WriteBaseInfoLog(DB_YHCODETIME,"",1);
+			SysStatusLine.HaveNewData = 'Y';
+		}
+	}
+
+	return ret;
+}
+
+//查找规则促销
+int DbfFindSalePromotionRuleEx(SaleCommodDef * com,char *yhsj,char *scsj,char *hykh,SalePromotionDef &yh)
+{
+	//本地查找
+	FDbase db;
+	long recno,maxseqno;
+	SalePromotionDef pyh;
+	char yhdjbh[15+1];
+	char sj[8+1];
+	char buf[20+1];
+	int found;
+	int codelen;
+
+	if (!db.OpenDBF(DB_YHCODE))  return FALSE;
+	if (!db.OpenIDX(IDX_YHCODE)) return FALSE;
+
+	//只接取主单上的时间
+	GetTime(yhsj,sj);
+	sj[5]='\0';//去掉秒钟
+
+	maxseqno = 0;
+
+#if RuleShowMsg
+	char str[100+1];
+	sprintf(str,"单品查找com->code=[%s]",com->code);
+	MessageBox(str);
+#endif //#if RuleShowMsg
+
+	//单品优惠 type=1
+	//电子秤商品的保质时间优惠 type=7
+	recno = db.index_search(&recno,com->code);
+	while (recno > 0)
+	{
+		db.go_record(recno);
+		if (!db.isdeleted())
+		{
+			memset(&pyh,0,sizeof(SalePromotionDef));
+			db.ReadDBF(&pyh);
+			if (strcmp(pyh.code,com->code)) break;
+			if ((strcmp(pyh.gz,com->gz) == 0 || strcmp(pyh.gz,"0") == 0) && (strcmp(pyh.spec,com->spec) == 0 || strcmp(pyh.spec,"AL") == 0) &&
+				(
+				strcmp(SYSDATE,pyh.ksrq) >=0 && strcmp(SYSDATE,pyh.jsrq) <=0 &&
+				(strlen(hykh) > 0 && DoubleToLong(pyh.yhhyzkfd) == 0 ||strlen(hykh) <= 0 && DoubleToLong(pyh.yhhyzkfd) == 1) &&
+			//strcmp(sj,pyh.kssj) >=0 && strcmp(sj,pyh.jssj) <=0 &&
+				pyh.seqno > maxseqno && pyh.yhdjlb == '8' &&
+				DoubleToLong(pyh.presentsl) != 1 && /*pyh.presentsl为1表示排除条件*/
+				(
+				pyh.type == '1' ||
+				(pyh.type == '7' && strcmp(scsj,"") && DisTime(yhsj,scsj) >= 60L*pyh.yhspace)
+				)
+				)
+				)
+			{
+				maxseqno = pyh.seqno;
+				yh = pyh;
+			}
+		}
+		recno = db.find_next();
+	}
+
+#if RuleShowMsg
+	sprintf(str,"柜组查找com->gz=[%s][%ld]",com->gz,maxseqno);
+	MessageBox(str);
+#endif //#if RuleShowMsg
+
+	found = 0;
+	strcpy(buf,com->gz);
+	codelen = strlen(buf);
+	while (codelen > 0 && !found)
+	{
+		buf[codelen] = '\0';
+		//柜组优惠和柜组品牌优惠 type=2,4
+		//		recno = db.index_search(&recno,com->gz);
+		recno = db.index_search(&recno,buf);
+		while (recno > 0)
+		{
+			db.go_record(recno);
+			if (!db.isdeleted())
+			{
+				memset(&pyh,0,sizeof(SalePromotionDef));
+				db.ReadDBF(&pyh);
+				//				if (strcmp(pyh.code,com->gz)) break;
+				if (strncmp(pyh.code,buf,codelen)) break;
+				if (strcmp(SYSDATE,pyh.ksrq) >=0 && strcmp(SYSDATE,pyh.jsrq) <=0 &&
+				//strcmp(sj,pyh.kssj) >=0 && strcmp(sj,pyh.jssj) <=0 &&
+					(strlen(hykh) > 0 && DoubleToLong(pyh.yhhyzkfd) == 0 ||strlen(hykh) <= 0 && DoubleToLong(pyh.yhhyzkfd) == 1) &&
+					pyh.seqno > maxseqno && pyh.yhdjlb == '8' &&
+					DoubleToLong(pyh.presentsl) != 1 && /*pyh.presentsl为1表示排除条件*/
+					(
+					pyh.type == '2' ||
+					(pyh.type == '4' && strcmp(pyh.pp,com->pp) == 0)
+					)
+					)
+				{
+					maxseqno = pyh.seqno;
+					yh = pyh;
+					found = 1;
+				}
+			}
+			recno = db.find_next();
+		}
+		codelen--;
+	}
+
+#if RuleShowMsg
+	sprintf(str,"小类查找com->dzxl=[%s][%ld]",com->dzxl,maxseqno);
+	MessageBox(str);
+#endif //#if RuleShowMsg
+
+	found = 0;
+	strcpy(buf,com->dzxl);
+	codelen = strlen(buf);
+	while (codelen > 0 && !found)
+	{
+		buf[codelen] = '\0';
+		//小类优惠和小类品牌优惠 type=3,5
+		//		recno = db.index_search(&recno,com->dzxl);
+//printf("\nbuf=[%s],len=[%d]",buf,codelen);
+//fflush(stdout);
+		recno = db.index_search(&recno,buf);
+		while (recno > 0)
+		{
+			db.go_record(recno);
+			if (!db.isdeleted())
+			{
+				memset(&pyh,0,sizeof(SalePromotionDef));
+				db.ReadDBF(&pyh);
+//printf("\ndjbh=[%s]",pyh.djbh);
+//fflush(stdout);
+				//				if (strcmp(pyh.code,com->dzxl)) break;
+				if (strncmp(pyh.code,buf,codelen)) break;
+				if (strcmp(SYSDATE,pyh.ksrq) >=0 && strcmp(SYSDATE,pyh.jsrq) <=0 &&
+				//strcmp(sj,pyh.kssj) >=0 && strcmp(sj,pyh.jssj) <=0 &&
+					(strlen(hykh) > 0 && DoubleToLong(pyh.yhhyzkfd) == 0 ||strlen(hykh) <= 0 && DoubleToLong(pyh.yhhyzkfd) == 1) &&
+					pyh.seqno > maxseqno && pyh.yhdjlb == '8' &&
+					DoubleToLong(pyh.presentsl) != 1 && /*pyh.presentsl为1表示排除条件*/
+					(
+					pyh.type == '3' ||
+					(pyh.type == '5' && strcmp(pyh.pp,com->pp) == 0)
+					)
+					)
+				{
+					maxseqno = pyh.seqno;
+					yh = pyh;
+					found = 1;
+				}
+			}
+			recno = db.find_next();
+		}
+		codelen--;
+	}
+
+#if RuleShowMsg
+	sprintf(str,"品牌查找com->pp=[%s][%ld]",com->pp,maxseqno);
+	MessageBox(str);
+#endif //#if RuleShowMsg
+
+	//品牌优惠 type=6
+	recno = db.index_search(&recno,com->pp);
+	while (recno > 0)
+	{
+		db.go_record(recno);
+		if (!db.isdeleted())
+		{
+			memset(&pyh,0,sizeof(SalePromotionDef));
+			db.ReadDBF(&pyh);
+			if (strcmp(pyh.code,com->pp)) break;
+			if (strcmp(SYSDATE,pyh.ksrq) >=0 && strcmp(SYSDATE,pyh.jsrq) <=0 &&
+			//strcmp(sj,pyh.kssj) >=0 && strcmp(sj,pyh.jssj) <=0 &&
+				(strlen(hykh) > 0 && DoubleToLong(pyh.yhhyzkfd) == 0 ||strlen(hykh) <= 0 && DoubleToLong(pyh.yhhyzkfd) == 1) &&
+				pyh.seqno > maxseqno && pyh.yhdjlb == '8' &&
+				DoubleToLong(pyh.presentsl) != 1 && /*pyh.presentsl为1表示排除条件*/
+				(
+				pyh.type == '6'
+				)
+				)
+			{
+				maxseqno = pyh.seqno;
+				yh = pyh;
+			}
+		}
+		recno = db.find_next();
+	}
+
+#if RuleShowMsg
+	sprintf(str,"整单查找com->code=[%s][%ld][%s]",com->code,maxseqno,com->gz);
+	MessageBox(str);
+#endif //#if RuleShowMsg
+
+	//整单优惠 type=8
+	if (strcmp(com->code,"ALL") == 0)
+	{
+		double tmpje = atof(com->gz);
+		double maxje = 0;
+		recno = db.index_search(&recno,com->code);
+		while (recno > 0)
+		{
+			db.go_record(recno);
+			if (!db.isdeleted())
+			{
+				memset(&pyh,0,sizeof(SalePromotionDef));
+				db.ReadDBF(&pyh);
+
+				if (strcmp(pyh.code,com->code)) break;
+				if (strcmp(SYSDATE,pyh.ksrq) >=0 && strcmp(SYSDATE,pyh.jsrq) <=0 &&
+				//strcmp(sj,pyh.kssj) >=0 && strcmp(sj,pyh.jssj) <=0 &&
+					(strlen(hykh) > 0 && DoubleToLong(pyh.yhhyzkfd) == 0 ||strlen(hykh) <= 0 && DoubleToLong(pyh.yhhyzkfd) == 1) &&
+					/*pyh.seqno > maxseqno && */pyh.yhdjlb == '8' &&
+					(
+					pyh.type == '8' && tmpje >= pyh.yhlsj && pyh.yhlsj > maxje
+					)
+					)
+				{
+					maxseqno = pyh.seqno;
+					maxje = pyh.yhlsj;
+					yh = pyh;
+				}
+			}
+			recno = db.find_next();
+		}
+	}
+	db.CloseIDX();
+	db.CloseDBF();
+
+#if RuleShowMsg
+	sprintf(str,"yh.djbh=[%s]maxseqno1=[%ld]",yh.djbh,maxseqno);
+	MessageBox(str);
+#endif //#if RuleShowMsg
+
+	if (maxseqno == 0L) return FALSE;
+
+	//如果非整单优惠时要避免找到整单的优惠
+	if (strcmp(com->code,"ALL") != 0)
+	{
+		if (!db.OpenDBF(DB_YHCODE))  return FALSE;
+		if (!db.OpenIDX(IDX_YHDJBH)) return FALSE;
+
+		//将找到的该单据的所有商品都找出来
+		recno = db.index_search(&recno,yh.djbh);
+		while (recno > 0)
+		{
+			db.go_record(recno);
+			if (!db.isdeleted())
+			{
+				memset(&pyh,0,sizeof(SalePromotionDef));
+				db.ReadDBF(&pyh);
+				if (strcmp(pyh.djbh,yh.djbh)) break;
+
+				//表示整单优惠
+				if (strcmp(pyh.code,"ALL") == 0 || pyh.type == '8') return FALSE;
+			}
+			recno = db.find_next();
+		}
+		db.CloseIDX();
+		db.CloseDBF();
+	}
+
+#if RuleShowMsg
+	sprintf(str,"yh.djbh=[%s]maxseqno2=[%ld]",yh.djbh,maxseqno);
+	MessageBox(str);
+#endif //#if RuleShowMsg
+
+	//到yhtime.dbf中验证当前时间段是否优惠
+	SalePromotionTimeDef yhtime;
+	if (!db.OpenDBF(DB_YHCODETIME))  return FALSE;
+	if (!db.OpenIDX(IDX_YHTIME)) return FALSE;
+
+	recno = db.index_search(&recno,yh.djbh);
+	while (recno > 0)
+	{
+		db.go_record(recno);
+		if (!db.isdeleted())
+		{
+			memset(&yhtime,0,sizeof(SalePromotionTimeDef));
+			db.ReadDBF(&yhtime);
+
+			yhtime.ksrq[4] = yhtime.ksrq[7] = '/';yhtime.ksrq[10] = '\0';
+			yhtime.jsrq[4] = yhtime.jsrq[7] = '/';yhtime.jsrq[10] = '\0';
+
+#if RuleShowMsg
+	sprintf(str,"时段查找yhtime.djbh=[%s][%s]",yhtime.djbh,yh.djbh);
+	MessageBox(str);
+	sprintf(str,"时段查找SYSDATE=[%s][%s][%s]",SYSDATE,yhtime.ksrq,yhtime.jsrq);
+	MessageBox(str);
+	sprintf(str,"时段查找sj=[%s][%s][%s]",sj,yhtime.kssj,yhtime.jssj);
+	MessageBox(str);
+#endif //#if RuleShowMsg
+
+			if (strcmp(yhtime.djbh,yh.djbh)) break;
+			if (strcmp(SYSDATE,yhtime.ksrq) >=0 && strcmp(SYSDATE,yhtime.jsrq) <=0 &&
+				strcmp(sj,yhtime.kssj) >=0 && strcmp(sj,yhtime.jssj) <=0)
+			{
+				db.CloseIDX();
+				db.CloseDBF();
+				
+				yh.yhspace = 0;
+
+				return TRUE;
+			}
+		}
+		recno = db.find_next();
+	}
+	db.CloseIDX();
+	db.CloseDBF();
+
+	return FALSE;
+}
+
+//商品拆分函数 //n要拆分的商品行号 //newsl拆分行的数量 int 
+FSaleWindow::SplitSalecommod(int n,double newsl)
+{ 
+	if (salecom_num <= 0 || n < 0 || n >= salecom_num) return FALSE;
+	if (newsl >= salecom[n].sl) return FALSE;
+
+	memset(&salecom[salecom_num],0,sizeof(SaleCommodDef));
+	memset(&cominfo[salecom_num],0,sizeof(SaleCommodInfoDef));
+	salecom[salecom_num] = salecom[n];
+	cominfo[salecom_num] = cominfo[n];
+
+	double zje = salecom[n].zje;
+	double rulezke = salecom[n].rulezke;
+	double mjzke = salecom[n].mjzke;
+
+	salecom[salecom_num].sl = salecom[n].sl - newsl;
+	salecom[n].sl = newsl;
+
+	//重算金额
+	salecom[n].zje = FloatConvert(salecom[n].sl * salecom[n].jg,2);
+	salecom[salecom_num].zje = FloatConvert(salecom[salecom_num].sl * salecom[salecom_num].jg,2);
+
+	//将拆分的商品的规则促销折扣金额进行分摊，此处必须分摊，不然会导致在计算整单的时候，出现成交金额为负数的情况 2011年5月20日13:54:50 jiangwenqiang
+	salecom[n].rulezke = (salecom[n].zje / zje) * rulezke;	
+	salecom[salecom_num].rulezke = (salecom[salecom_num].zje / zje) * rulezke; 
+	salecom[n].mjzke = (salecom[n].zje / zje) * mjzke;	
+	salecom[salecom_num].mjzke = (salecom[salecom_num].zje / zje) * mjzke;
+
+	salecom_num++;
+
+	//计算会员折扣和优惠折扣
+	CalculateAllRebate(n);
+	//批量销售折扣处理,重算优惠折扣和会员折扣
+	CalculateBatchRebate(n);
+
+	//计算会员折扣和优惠折扣
+	CalculateAllRebate(salecom_num-1);
+	//批量销售折扣处理,重算优惠折扣和会员折扣
+	CalculateBatchRebate(salecom_num-1);
+
+	//记录打印标志(打印标志取原行上的标志)
+	printflag[salecom_num-1] = printflag[n];
+
+	//	//记录断点
+	//	WriteBroken(n,BROKEN_UPDATE);
+	//	WriteBroken(salecom_num-1,BROKEN_APPEND);
+
+	//刷新被拆分的原商品行
+	if (n >= winfirst && n < winfirst + PAGE_SALE_COM - 1) DispOneSaleCommod(n - winfirst,n);
+
+	//刷新商品列表
+	DispSaleCommod();
+
+	CreateInputLine(2);
+
+	return TRUE;
+}
+
+int FSaleWindow::IsMatchCommod(SalePromotionDef *yh,int n)
+{
+	#if RuleShowMsg
+		char buf[200+1];
+		sprintf(buf,"[yhpfj:%f],[type:%c],[comcode:%s],[code:%s],[comgz:%s],[gz:%s],[comspec:%s],[spec:%s],[comisjd:%c],[yhisjd:%c]",yh->yhhyj,yh->type,salecom[n].code,yh->code,salecom[n].gz,yh->gz,salecom[n].spec,yh->spec,salecom[n].comisjd,yh->title[0]);
+		MessageBox(buf);
+	#endif //RuleShowMsg
+	
+	//如果是家电商品则不参与统计
+	if(salecom[n].comisjd == 'Y') return FALSE;
+
+	//整单的规则,整单优先级最高  jiangwenqiang  2011-6-17 9:23:36
+	if (yh->type == '8') return TRUE;
+
+	//只有正常的商品才参与规则促销
+	if (salecom[n].flag != '4' && salecom[n].flag != '2')
+	{
+	#if RuleShowMsg
+		char str[100+1];
+		sprintf(str,"salecom[%d].flag=[%c]",n,salecom[n].flag);
+		MessageBox(str);
+	#endif //#if RuleShowMsg
+
+		return FALSE;
+	}
+		
+	//如果电子称商品不是排除条件
+	if(DoubleToLong(yh->presentsl) != 1 || salecom[n].flag != '2')
+	{
+		//如果电子称商品条件不是满减/满返，结果也不是满减/满返 
+		if(!(yh->yhdjlb == '8' && (yh->ppistr3[0] == 'G' || yh->ppistr3[0] == 'C') || yh->yhdjlb == 'G' || yh->yhdjlb == 'C')
+			&& salecom[n].flag == '2')
+		{
+		#if RuleShowMsg
+			char str[100+1];
+			sprintf(str,"yh->presentsl=[%f][%c][%c][%c]",yh->presentsl,yh->yhdjlb,yh->ppistr3[0],salecom[n].flag);
+			MessageBox(str);
+		#endif //#if RuleShowMsg
+
+			return FALSE;
+		}
+	}	
+
+	//条件为整单的时候如果是结果为非整单。此处就不判断商品是否参与了规则促销，
+	//不然在结果匹配的时候会因为商品参与了非整单规则促销而无法参与整单的规则促销2011-5-20 13:55:34  jiangwenqiang
+	//在整单规则的时候初始化商品标识的时候使用 add 2011-12-16 12:44:37 jiangwenqiang
+	if (rulepoplist[0].type != '8')
+	{
+		//不参与规则促销
+		if (cominfo[n].infostr1[1] != 'Y') 
+		{
+		#if RuleShowMsg
+			char str[100+1];
+			sprintf(str,"rulepoplist[0].type=[%c]cominfo[n].infostr1[1]=[%c]",rulepoplist[0].type,cominfo[n].infostr1[1]);
+			MessageBox(str);
+		#endif //#if RuleShowMsg
+
+			return FALSE;
+		}
+	}
+	
+	switch(yh->type)
+	{
+	case '1'://单品
+		if (strcmp(yh->code,salecom[n].code)) break;
+		if ((strcmp(yh->gz,salecom[n].gz) == 0 || strcmp(yh->gz,"0") == 0) && (strcmp(yh->spec,salecom[n].spec) == 0 || strcmp(yh->spec,"AL") == 0))
+		{
+			return TRUE;
+		}
+		break;
+	case '2'://柜组
+		if (strcmp(yh->code,salecom[n].gz)) break;
+		return TRUE;
+	case '3'://类别
+		#if RuleShowMsg
+		char buf[100];
+		sprintf(buf,"yh->code=[%s]salecom[n].dzxl=[%s]",yh->code,salecom[n].dzxl);
+		MessageBox(buf);
+		#endif //RuleShowMsg
+		if (strncmp(yh->code,salecom[n].dzxl,strlen(yh->code))) break;
+		return TRUE;
+	case '4'://柜组品牌
+		if (strcmp(yh->code,salecom[n].gz)) break;
+		if (strcmp(yh->pp,salecom[n].pp) == 0)
+		{
+			return TRUE;
+		}
+		break;
+	case '5'://类别品牌
+		if (strncmp(yh->code,salecom[n].dzxl,strlen(yh->code))) break;
+		if (strcmp(yh->pp,salecom[n].pp) == 0)
+		{
+			return TRUE;
+		}
+		break;
+	case '6'://品牌
+		if (strcmp(yh->code,salecom[n].pp)) break;
+		return TRUE;
+	case '7'://生鲜单品
+		if (strcmp(yh->code,salecom[n].code)) break;
+		if ((strcmp(yh->gz,salecom[n].gz) == 0 || strcmp(yh->gz,"0") == 0) && (strcmp(yh->spec,salecom[n].spec) == 0 || strcmp(yh->spec,"AL") == 0))
+		{
+			return TRUE;
+		}
+		break;
+	}
+	
+	return FALSE;
+}

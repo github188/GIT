@@ -1,0 +1,1 @@
+EPSON TM-U288B的串口黑标打印机 = EPSON TM-U288B serial port black label printer

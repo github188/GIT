@@ -1,0 +1,1 @@
+键盘配置文件导入错误,马上退出系统 = Error when import keyboard configure file, quit now

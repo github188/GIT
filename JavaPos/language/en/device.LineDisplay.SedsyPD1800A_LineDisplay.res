@@ -1,0 +1,1 @@
+深圳桑达龙金PD1800A串口顾客显示牌 = SHENZHEN SED PD1800A serial port customer board

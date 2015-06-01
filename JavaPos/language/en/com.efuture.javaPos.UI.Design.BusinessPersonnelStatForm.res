@@ -1,0 +1,15 @@
+营业员销售统计 =The assistant sales statistics
+营业员号 =Sales#
+销售金额 =Sales
+笔数 =Qty
+折扣金额 =Disc
+退货金额 =Returns
+笔数 =Qty
+折扣金额 =Disc
+日期(YYYYMMDD) =Date(YYYYMMDD)
+收银员 =cashier
+当前款员 =cashier
+所有款员 =cashiers
+班次 =Shift
+全部班次 =Shifts
+[付款键切换输入] =【Key switch input of pay】

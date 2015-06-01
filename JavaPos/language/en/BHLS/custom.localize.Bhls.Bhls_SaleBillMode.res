@@ -1,0 +1,14 @@
+本笔交易有活动返券\n =Active redeem coupon exist in this transaction\n
+本笔交易有退券 =Coupon return exist in this transaction
+返A券:  =Redeemed coupon A
+返B券:  =Redeemed coupon B
+(重打印) =(Reprinted)
+券  号:  =Coupon number
+券信息:  =Coupon information
+券金额:  =Amount of Coupon 
+超市 =Supermarket
+\n赠品栏 =\nFree gifts column
+商品编码: =Goods code
+商品柜组: =Goods counter
+赠送价值: =Gifts worth
+赠送数量: =Quantity of Gifts

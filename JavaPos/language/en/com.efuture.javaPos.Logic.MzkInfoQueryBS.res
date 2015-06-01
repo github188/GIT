@@ -1,0 +1,16 @@
+面值卡 =Face value card
+此功能必须联网使用 =This function must be use online
+请刷 =Please swipe
+请将{0}从刷卡槽刷入 =Please swipe {0} through the card slot
+正在查询{0}信息，请等待..... =Being queried {0} information,please wait.....
+卡  号:  =Card Number
+持卡人:  =Cardholder
+卡状态:  =Card state
+面  值:  =Face value
+余  额:  =Balance
+有效期:  =Expiration Date
+工本费:  =Cost of production
+有效额:  =Effective amount
+面值卡名称 =Face value card name
+请选择查询面值卡类型 =Please select Face value card type which queried
+付款对象{0}不存在 = Payment object {0} does not exist

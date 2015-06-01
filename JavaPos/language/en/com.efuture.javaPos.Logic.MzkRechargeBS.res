@@ -1,0 +1,13 @@
+当前可用余额为: =The current available balance for:
+请仔细核对下列充值信息\n\n =Please check the following  recharge information\n\n
+卡    号: =Card Number
+金    额: =Amount
+ 元 =US Dollar
+磁道数据为空! =Magnetic track data is empty!
+记录储值卡充值日志失败! =Logging recharge cards failed !
+读取消费序号失败!\n\n =Read consumer numbers failed!\n\n
+正在发送面值卡充值冲正数据,请稍等...... =Sending face value recharge card recover data , please wait ......
+有冲正数据未发送,不能进行卡交易! =There is some Recover data did not send,Card transactions can not be! 
+冲正文件的交易类型无效，请检查冲正文件 =The Sale type which from Recovery file is invalid,please check recovery file
+冲正文件没有被删除,请检查磁盘! =Recovery file are not deleted,please check the disk!
+删除面值卡冲正文件失败!\n\n =Delete recovery file which from face value card failed!n\n 

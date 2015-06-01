@@ -1,0 +1,11 @@
+付款代码 =Payment code
+付款名称 =Payment name
+付款账号 =Payment account
+原小票中的付款方式列表 =Payment Methods List in original ticket
+前台指定小票退货不能输入交易信息! =The front counter specified ticket can not input transaction information!
+该盘点单不允许修改! =The inventory is not allowed to be modified!
+团购不允许修改交易信息 =Group-purchase is not allowed to modify the transaction information 
+应退额 =Refundable amount
+应付额 =Amount
+断点保护文件没有被删除,请检查磁盘! =Breakpoints protected files are not deleted,please check the disk!
+删除断点保护文件失败!\n\n =Delete breakpoints protected files failed!

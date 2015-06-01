@@ -1,0 +1,11 @@
+挂单数: = Pending
+提示框 = Tip
+描述 = Description
+进入日志工具 = Enter log tools
+查看状态提示历史记录 = View state prompt history
+POS 日志工具 = POS log tools
+时间 = Time
+2010-09-15 09:34:07 三 = 2010-09-15 09:34:07 Wed.
+联网 = ON   
+班次 = Shift
+脱网 = Off

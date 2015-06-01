@@ -1,0 +1,11 @@
+款机型号设置 = POS model set
+您可以手工选择款机型号！= You can choose the POS model manually！
+请选择款机型号:= Please choose the POS model：
+连接FTP 服务器失败\n无法更新配置模版 = Connect FTP server failed \n can not update the configuration template
+从FTP 服务器上下载 PosModel.ini 文件失败\n无法更新配置模版 = Download PosModel.ini failed from FTP server \n can not update the configuration template
+配置模版更新成功! = Configuration template update succeed
+FTP 服务器上没有找到 PosModel.ini 文件\n无法更新配置模版 = PosModel.ini not found in FTP server \n can not update the configuration template
+网络更新 = Network update
+找不到文件: = File not found
+当前设置 = Current configuration
+点击网络更新从更新服务器的FTP上下载最新配置模版PosModel.ini= Press update to download the newest configuration template PosModel.ini from FTP

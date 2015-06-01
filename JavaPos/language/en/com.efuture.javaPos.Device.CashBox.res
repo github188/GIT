@@ -1,0 +1,1 @@
+[{0}]\n\n钱箱设备对象不存在 = [{0}]\n\n Cashbox device object is not exist

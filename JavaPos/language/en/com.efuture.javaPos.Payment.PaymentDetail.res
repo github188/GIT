@@ -1,0 +1,1 @@
+生成交易付款对象失败\n\n =Failed to generate payment transaction object\n\n 

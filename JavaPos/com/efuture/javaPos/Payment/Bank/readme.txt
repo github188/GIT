@@ -1,0 +1,14 @@
+Bjjl		北京嘉利(中信银行合作)
+Bzhx		北京嘉利(中行合作,燕莎金源店)
+Ysty		北京嘉利(中行合作,燕莎太原店,继承Bzhx)
+Bjyd		北京亚大
+Hzxl		杭州新利
+Shyl		上海银联
+Ylsw		银联商务exe
+Ylswdll		银联商务dll
+Shsd		上海衫德
+Bjjw		北京捷文
+Rkys		瑞康银商
+Shsdsj		上海衫德(上海衫德合作，万千上海店)
+Xmys		厦门银石(厦门银石合作，厦门奥特莱斯)
+BjydSzwq    北京亚大(万千百货苏州店)

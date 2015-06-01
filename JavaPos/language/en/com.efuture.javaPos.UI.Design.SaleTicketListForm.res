@@ -1,0 +1,17 @@
+销售小票列表 = List
+小票号 = Ticket#
+班次 = Shift
+收银员 = Cashier
+应收金额 = Payable
+折扣额 = Discount
+实际付款 = Amt_given
+交易类型 = Type
+日期(YYYYMMDD) = Date(YYYYMMDD)
+小票号 = Ticket#
+类型 = Type
+全部交易 = All transactions
+销售小票 = Sales ticket
+退货小票 = Return ticket
+红冲小票 = Void ticket
+[付款键切换输入] = [Key switch]
+单据总数:0 应收合计:0.00 应缴合计:0.00 = Notes:0 Payable sum:0.00 Payable sum:0.00

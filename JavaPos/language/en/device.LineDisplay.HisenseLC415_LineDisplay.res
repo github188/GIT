@@ -1,0 +1,1 @@
+海信LC415串口顾客显示牌 = Hisense LC415 serial line display

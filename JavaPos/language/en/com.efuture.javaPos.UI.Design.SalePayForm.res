@@ -1,0 +1,10 @@
+销售付款 = Tender
+代码 = Code
+付款名称 = Name
+汇率 = Rate
+付款名 = Name
+应付金额: = Payable
+剩余金额: = Remaining
+付款帐号 = Account
+付款金额 = Amount
+税款担保金: = Warranty

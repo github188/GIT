@@ -1,0 +1,1 @@
+PT170PD并口打印机 = PT170PD parallel port printer

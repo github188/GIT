@@ -1,0 +1,737 @@
+//查找调价促销
+CREATE PROCEDURE informix.sp_findyh 
+	(
+		vmkt      VARCHAR(11),  /* 门店号        */
+		vcode                       VARCHAR(14),            /* 商品条码            */
+		vgz                       VARCHAR(21),          /* 商品柜组    */
+		vdzxl                   VARCHAR(11),            /* 商品类别    */
+		vpp                       VARCHAR(7),          /* 商品品牌    */
+		vspec                   VARCHAR(3),            /* 商品规格    */
+		vscsj                   VARCHAR(20),            /* 生鲜商品的生产时间(19位)    */
+		vyhsj                   VARCHAR(20))            /* 优惠时间(2000/08/01 12:30:20)        */
+RETURNING
+		int   AS       ret                             ,                       /* 返回值                                       */
+		integer   AS   rseqno          ,                       /* 序号                 */
+		VARCHAR(16) AS rdjbh                   ,               /* 优惠单据编号         */
+		CHAR     AS    rtype                   ,                         /* 优惠类别   */
+		VARCHAR(14) AS rcode                   ,               /* 商品编码,核算码 */
+		VARCHAR(21) AS rgz                             ,               /* 柜组         */
+		VARCHAR(11) AS rdzxl                   ,               /* 商品类别             */
+		VARCHAR(7) AS rpp                             ,               /* 品牌         */
+		VARCHAR(3) AS rspec                   ,               /* 多单位规格，'00'-基础信息,'AL'-所有规格都优惠,'xx'-指定规格优惠 */
+		VARCHAR(11) AS rksrq                   ,               /* ryhlsj          ,                       /* 优惠零售价  */
+		numeric(12,2)   AS     ryhhyj          ,     /* 优惠会员价                    */
+		numeric(12,2)   AS     ryhzkl          ,     /* 优惠折扣率                    */
+		numeric(12,2)   AS     ryhhyzkl        ,           /* 优惠会员折扣率          */
+		numeric(12,2)   AS     ryhpfj          ,                       /* 优惠批发价  */
+		numeric(12,2)   AS     ryhpfzkl        ,                       /* 优惠批发折扣率                */
+		numeric(12,4)   AS     ryhhyzkfd       ,                       /* 会员折扣分担*/
+		numeric(12,4)   AS     ryhpfzkfd       ,                       /* 批发折扣分担*/
+		CHAR     AS  ryhdjlb   ,       /* 优惠单据类别       */
+		numeric(12,2)  AS      ryhxlsl         ;    /* 优惠限量数量            */
+
+----------MODIFY BY FYH FOR ryhxlsl 2003/09/09------------------------------------
+--1、增加参数ryhxlsl            OUT numeric(12,2)               /* 优惠限量数量*/
+--2、从表POSPOPINFO中取PPIMAXNUM为ryhxlsl赋值
+----------------------------------------------------------------------------------
+
+	DEFINE ret                             int             ;                     /* 返回值                                         */
+	DEFINE rseqno            integer         ;                    /* 序号         */
+	DEFINE rdjbh                   VARCHAR(16)     ;              /* 优惠单据编号 */
+	DEFINE rtype                   CHAR            ;                        /* 优惠类别                           */
+	DEFINE rcode                   VARCHAR(14)     ;              /* 商品编码,核算码 */
+	DEFINE rgz                             VARCHAR(21)     ;              /* 柜组 */
+	DEFINE rdzxl                   VARCHAR(11)     ;              /* 商品类别     */
+	DEFINE rpp                             VARCHAR(7)     ;              /* 品牌 */
+	DEFINE rspec                   VARCHAR(3)     ;              /* 多单位规格，'00'-基础信息,'AL'-所有规格都优惠,'xx'-指定规格优惠 */
+	DEFINE rksrq                   VARCHAR(11)     ;              /* 开始日期     */
+	DEFINE rjsrq                   VARCHAR(11)     ;              /* 结束日期     */
+	DEFINE rkssj                   VARCHAR(6)     ;              /* 开始时间     */
+	DEFINE rjssj                   VARCHAR(6)     ;              /* 结束时间     */
+	DEFINE rzkfd                   numeric(12,2)   ;                      /* 优惠折扣分担                 */
+	DEFINE ryhspace          numeric(12,2)   ;                    /* 电子秤商品的优惠的时间间隔  */
+	DEFINE ryhlsj            numeric(12,2)   ;                    /* 优惠零售价  */
+	DEFINE ryhhyj            numeric(12,2)   ;     /* 优惠会员价                 */
+	DEFINE ryhzkl            numeric(12,2)   ;     /* 优惠折扣率                 */
+	DEFINE ryhhyzkl          numeric(12,2)   ;        /* 优惠会员折扣率          */
+	DEFINE ryhpfj            numeric(12,2)   ;                    /* 优惠批发价  */
+	DEFINE ryhpfzkl          numeric(12,2)   ;                    /* 优惠批发折扣率                */
+	DEFINE ryhhyzkfd       numeric(12,4)   ;                      /* 会员折扣分担*/
+	DEFINE ryhpfzkfd       numeric(12,4)   ;                      /* 批发折扣分担*/
+	DEFINE  ryhdjlb    CHAR            ;       /* 优惠单据类别       */
+	DEFINE ryhxlsl                 numeric(12,2)   ;    /* 优惠限量数量          */
+	DEFINE l_SaleSL                numeric(12,2)   ;    /* 优惠限量数量          */
+
+	DEFINE vseqno   numeric(12,2);
+	DEFINE vscsjjg  numeric(12,2);
+	DEFINE vsj           CHAR(5);
+
+	DEFINE vminpriceseqno   numeric(12,2);
+	DEFINE vminpricemode    CHAR;
+
+	define __Err,__BreakPoint,__ISAM      int;
+	define __Msg       varchar(255);
+	ON EXCEPTION SET __Err,__ISAM,__Msg
+		let ret = 0;         
+		Return ret,rseqno,rdjbh,rtype,rcode,rgz,rdzxl,rpp,rspec,rksrq,rjsrq,rkssj,
+		rjssj,rzkfd,ryhspace,ryhlsj,ryhhyj, ryhzkl, ryhhyzkl,ryhpfj,ryhpfzkl,
+		ryhhyzkfd,ryhpfzkfd, ryhdjlb,ryhxlsl;
+	END EXCEPTION;
+
+	LET rseqno    = 0;
+	LET rdjbh     = '';
+	LET rtype     = '0';
+	LET rcode     = '';
+	LET rgz       = '';
+	LET rdzxl     = '';
+	LET rpp       = '';
+	LET rspec     = '';
+	LET rksrq     = '';
+	LET rjsrq     = '';
+	LET rkssj     = '';
+	LET rjssj     = '';
+	LET rzkfd     = 0;
+	LET ryhspace  = 0;
+	LET ryhlsj    = 0;
+	LET ryhhyj    = 0;
+	LET ryhzkl    = 0;
+	LET ryhhyzkl  = 0;
+	LET ryhpfj    = 0;
+	LET ryhpfzkl  = 0;
+	LET ryhhyzkfd = 0;
+	LET ryhpfzkfd = 0;
+	LET  ryhdjlb  = '';
+	LET ryhxlsl   = 0;
+	LET l_SaleSL  = 0;
+  
+	IF vyhsj IS NULL OR vyhsj = '' THEN
+		let ret = 0;
+		RETURN;
+	END IF;
+
+	SELECT TO_CHAR(TO_DATE(vyhsj,'%Y/%m/%d %H:%M:%S'),'%H:%M') INTO vsj FROM timemaker;
+
+	IF LTRIM(vscsj) IS NULL THEN
+		let vscsjjg = 0;
+	ELSE
+		let  vscsjjg=(TO_DATE(vyhsj,'%Y/%m/%d %H:%M:%S') - TO_DATE(vscsj,'%Y/%m/%d %H:%M:%S'))*24*60;
+	END IF;
+     
+	LET vminpriceseqno = 0;
+	LET vminpricemode = '0';
+	
+	/*查询有效期内单品的最底价优惠*/
+	select  FIRST 1 ppiseq,ppimode,ppinewsj 
+	INTO vminpriceseqno,vminpricemode,ryhlsj 
+	from (
+	SELECT NVL(PPISEQ,0) ppiseq,PPIMODE,NVL(PPINEWSJ,0) ppinewsj
+	FROM POSPOPINFO
+	WHERE (rseqno=0 OR PPISEQ < rseqno) AND
+		PPISTARTDATE <=today AND
+		PPIENDDATE   >=today   And
+		PPISTARTTIME <= vsj         AND
+		PPIENDTIME   >= vsj   And
+	Exists (Select 'x'
+		From POSPOPINFOTIME A
+		Where  A.PPIBILLNO = PPIBILLNO And
+				A.PPIKSRQ  <=today And
+				A.PPIJSRQ  >= today And
+				A.PPIKSSJ <= vsj And
+				A.PPIJSSJ >= vSj
+              ) And
+			PPHDJLB ='1' AND
+		(
+		 (PPIBARCODE = vcode AND (PPIMFID = vgz OR PPIMFID = '0') AND
+		  NVL(LTRIM(PPISPEC),'00') = NVL(LTRIM(vspec),'00') AND PPIMAXNUM <> 0 AND
+		  (PPIMODE = '1' OR (PPIMODE = '7' AND vscsjjg >= PPISPACE)) AND
+		  NVL(PPINEWSJ,0) > 0
+		 )
+		) ORDER BY PPINEWSJ
+		
+	);
+
+        SELECT NVL(MAX(PPISEQ),0)
+          INTO vseqno
+                FROM POSPOPINFO
+                WHERE (rseqno=0 OR PPISEQ < rseqno) AND
+                                PPISTARTDATE <=today AND
+                           PPIENDDATE   >=today   And
+                    PPISTARTTIME <= vsj         AND
+                        PPIENDTIME   >= vsj   And
+      Exists (Select 'x'
+              From POSPOPINFOTIME A
+              Where  A.PPIBILLNO = PPIBILLNO And
+                     A.PPIKSRQ  <=today And
+                     A.PPIJSRQ  >= today And
+                     A.PPIKSSJ <= vsj And
+                     A.PPIJSSJ >= vSj
+              ) And
+       PPHDJLB ='1'                 AND
+      (
+       (PPIBARCODE = vcode AND (PPIMFID = vgz OR PPIMFID = '0') AND
+         NVL(LTRIM(PPISPEC),'00') = NVL(LTRIM(vspec),'00') AND PPIMAXNUM <> 0 AND
+         (PPIMODE = '1' OR (PPIMODE = '7' AND vscsjjg >= PPISPACE))
+       ) OR
+       (PPIBARCODE = vgz AND PPIMODE = '2') OR
+       (PPIBARCODE = vgz AND PPIPPCODE = vpp AND PPIMODE = '4') OR
+       (PPIBARCODE = vdzxl AND PPIMODE = '3') OR
+       (PPIBARCODE = vdzxl AND PPIPPCODE = vpp AND PPIMODE = '5') OR
+       (PPIBARCODE = vpp AND PPIMODE = '6')
+      );
+
+	IF vseqno = 0 THEN
+		let ret = 0;
+    
+		Return ret,rseqno,rdjbh,rtype,rcode,rgz,rdzxl,rpp,rspec,rksrq,rjsrq,rkssj,
+            rjssj,rzkfd,ryhspace,ryhlsj,ryhhyj, ryhzkl, ryhhyzkl,ryhpfj,ryhpfzkl,
+            ryhhyzkfd,ryhpfzkfd, ryhdjlb,ryhxlsl;
+	END IF;
+
+	SELECT PPISEQ,PPIMODE,PPIBILLNO,PPIBARCODE,PPIMFID,PPICATID,PPIPPCODE,PPISPEC,PPINEWSJ,PPINEWHYJ,PPINEWRATE,PPINEWHYRATE,PPIZKFD,
+       TO_CHAR(PPISTARTDATE,'%Y/%m/%d'),TO_CHAR(PPIENDDATE,'%Y/%m/%d'),PPISTARTTIME,PPIENDTIME,PPISPACE,
+       PPINEWPFJ,PPINEWPFRATE,PPIHYZKFD,PPIPFZKFD,nvl(PPIMAXNUM,0)
+    INTO rseqno,rtype,rdjbh,rcode,rgz,rdzxl,rpp,rspec,ryhlsj,ryhhyj,ryhzkl,ryhhyzkl,rzkfd,
+       rksrq,rjsrq,rkssj,rjssj,ryhspace,
+       ryhpfj,ryhpfzkl,ryhhyzkfd,ryhpfzkfd,ryhxlsl
+    FROM POSPOPINFO
+    WHERE PPISEQ = vseqno;
+    
+	/*如果当前商品找到单品的最底价促销单,则底价优先*/
+	IF vminpriceseqno > 0 AND vminpricemode = rtype THEN
+		SELECT PPISEQ,PPIMODE,PPIBILLNO,PPIBARCODE,PPIMFID,PPICATID,PPIPPCODE,PPISPEC,PPINEWSJ,PPINEWHYJ,PPINEWRATE,PPINEWHYRATE,PPIZKFD,
+	       TO_CHAR(PPISTARTDATE,'%Y/%m/%d'),TO_CHAR(PPIENDDATE,'%Y/%m/%d'),PPISTARTTIME,PPIENDTIME,PPISPACE,
+	       PPINEWPFJ,PPINEWPFRATE,PPIHYZKFD,PPIPFZKFD,nvl(PPIMAXNUM,0)
+	    INTO rseqno,rtype,rdjbh,rcode,rgz,rdzxl,rpp,rspec,ryhlsj,ryhhyj,ryhzkl,ryhhyzkl,rzkfd,
+	       rksrq,rjsrq,rkssj,rjssj,ryhspace,
+	       ryhpfj,ryhpfzkl,ryhhyzkfd,ryhpfzkfd,ryhxlsl
+	    FROM POSPOPINFO
+	    WHERE PPISEQ = vminpriceseqno;
+	END IF;
+    
+    LET ryhxlsl = -9999;
+   /*如果存在促销限量,则取已经发生的销售数量*/
+   /*
+  IF ryhxlsl > 0 THEN
+    SELECT NVL(SUM(BZHL * SL * SALEFLAG), 0) 
+          INTO l_SaleSL
+      FROM SALEPOPGOODS
+     WHERE GDID = rcode
+       AND POPBNO = rdjbh
+       AND MFID = rgz;
+    IF l_SaleSL > 0 THEN
+       let ryhxlsl = ryhxlsl - l_SaleSL;
+       IF ryhxlsl <= 0 THEN
+          let ryhxlsl = 0;
+       END IF;
+       EXIT WHILE;
+    END IF;
+ END IF;
+ */
+
+  let ret = 1;
+  Return ret,rseqno,rdjbh,rtype,rcode,rgz,rdzxl,rpp,rspec,rksrq,rjsrq,rkssj,
+         rjssj,rzkfd,ryhspace,ryhlsj,ryhhyj, ryhzkl, ryhhyzkl,ryhpfj,ryhpfzkl,
+         ryhhyzkfd,ryhpfzkfd, ryhdjlb,ryhxlsl;
+END PROCEDURE                                                                                                                                                                                                                                                      
+
+//根据单号找促销明细
+CREATE PROCEDURE informix.java_getpopinfo( mktcode varchar(20), jygs varchar(20), billno varchar(20))
+returning
+   int   as  ppiseq,
+   varchar(15) as  ppibillno,
+   char(1)     as  ppimode,
+   varchar(13) as  ppibarcode,
+   varchar(20) as  ppimfid,
+   varchar(10) as  ppicatid,
+   varchar(6)  as  ppippcode,
+   char(2)  as  ppispec,
+   varchar(20)   as  ppistartdate,
+   varchar(20)   as  ppienddate,
+   char(5)  as  ppistarttime,
+   char(5)   as  ppiendtime,
+   decimal(5,4)  as  ppizkfd,
+   decimal(6) as  ppispace,
+   decimal(12,2) as  ppinewsj,
+   decimal(14,4)   as  ppinewhyj,
+   decimal(5,4)  as  ppinewrate,
+    decimal(5,4) as  ppinewhyrate,
+    decimal(14,4)  as  ppinewpfj,
+    decimal(5,4)  as  ppinewpfrate,
+   decimal(5,4)   as  ppihyzkfd,
+   decimal(5,4)   as  ppipfzkfd,
+   varchar(2,0)   as  pphdjlb,
+   decimal(10,4)   as  ppimaxnum,
+   varchar(13,0)  as  ppipresentcode,
+   varchar(60,0)   as  ppititle,
+   decimal(10,4)   as  ppimaxnum1,
+   varchar(13,0)   as  ppipresentcode1,
+   char(2)    as  ppipresentunit,
+   decimal(10,4)   as  ppipresentjs,
+   decimal(10,4)   as  ppipresentsl,
+   decimal(10,4)   as  ppipresentxl,
+   decimal(12,2)    as  ppipresentjg,
+   decimal(16)   as  pphjc,
+    varchar(255)   as  pphstr1,
+    varchar(255)   as  pphstr2,
+    varchar(255)   as  pphstr3,
+    varchar(255)   as  pphstr4,
+    varchar(255)  as  pphstr5,
+    varchar(255)   as  pphstr6,
+    varchar(20,0)   as  pphiszsz,
+    varchar(20,0)   as  pphisptgz,
+    varchar(20,0)   as  pphistjn
+
+
+
+   define __Err,__BreakPoint,__ISAM int;
+   define __Msg         varchar(255);
+
+   DEFINE __ppiseq          int;
+   DEFINE __ppititle        varchar(60);
+   DEFINE __ppimode         char(1)      ;
+   DEFINE __ppibillno       varchar(15);
+   DEFINE __ppibarcode      varchar(13);
+   DEFINE __ppisupid        varchar(8) ;
+   DEFINE __ppimfid         varchar(20);
+   DEFINE __ppicatid        varchar(10);
+   DEFINE __ppippcode       varchar(6) ;
+   DEFINE __ppispec         char(2)      ;
+   DEFINE __ppinewsj        decimal(12,2);
+   DEFINE __ppinewhyj       decimal(14,4);
+   DEFINE __ppinewrate      decimal(5,4) ;
+   DEFINE __ppinewhyrate    decimal(5,4) ;
+   DEFINE __ppistartdate    char(20)         ;
+   DEFINE __ppienddate      char(20)         ;
+   DEFINE __ppistarttime    char(5)      ;
+   DEFINE __ppiendtime      char(5)      ;
+   DEFINE __ppispace        decimal(6)   ;
+   DEFINE __ppimaxnum       decimal(10,4);
+   DEFINE __ppimaxnum1      decimal(10,4);
+   DEFINE __ppizkfd         decimal(5,4) ;
+   DEFINE __ppipresentcode  varchar(13);
+   DEFINE __ppipresentcode1  varchar(13);
+   DEFINE __ppipresentunit  char(2)      ;
+   DEFINE __ppipresentjs    decimal(10,4);
+   DEFINE __ppipresentsl    decimal(10,4);
+   DEFINE __ppipresentxl    decimal(10,4);
+   DEFINE __ppipresentjg    decimal(12,2);
+   DEFINE __ppinewpfj       decimal(14,4);
+   DEFINE __ppinewpfrate    decimal(5,4) ;
+   DEFINE __ppipfzkfd       decimal(5,4) ;
+   DEFINE __ppihyzkfd       decimal(5,4) ;
+   DEFINE __pphdjlb         varchar(2,0) ;
+   DEFINE __pphpl           decimal(14,4);
+   DEFINE __pphjc           decimal(16)  ;
+   DEFINE __pphstr1         varchar(255) ;
+   DEFINE __pphstr2         varchar(255) ;
+   DEFINE __pphstr3         varchar(255) ;
+   DEFINE __pphstr4         varchar(255) ;
+   DEFINE __pphstr5         varchar(255) ;
+   DEFINE __pphstr6         varchar(255) ;
+   DEFINE __pphiszsz        varchar(20);
+   DEFINE __pphisptgz       varchar(20);
+   DEFINE __pphistjn        varchar(20);
+
+   let __ppititle ='';
+   let __ppimode  ='';
+   let __ppibillno ='';
+   let __ppibarcode ='';
+   let __ppisupid  ='';
+   let __ppimfid   ='' ;
+   let __ppicatid ='' ;
+   let __ppippcode ='';
+   let __ppispec  ='';
+   let __ppinewsj  =0 ;
+   let __ppinewhyj =0  ;
+   let __ppinewrate =0;
+   let __ppinewhyrate =0;
+   let __pphstr1  ='';
+   let __pphstr2  ='';
+   let __pphstr3  ='';
+   let __pphstr4  ='';
+   let __pphstr5  ='';
+   let __pphstr6  ='';
+   let __pphiszsz ='';
+   let __pphisptgz='';
+   let __pphistjn ='';
+   let __ppipresentcode ='';
+   let __ppipresentcode1 ='';
+
+ foreach
+        select
+              ppiseq,
+        ppibillno,
+        ppimode,
+        ppibarcode,
+        ppimfid,
+        ppicatid,
+        ppippcode,
+        ppispec,
+        to_char(ppistartdate,'%Y/%m/%d'),
+        to_char(ppienddate,'%Y/%m/%d'),
+        ppistarttime,
+        ppiendtime,
+        ppizkfd,
+        ppispace,
+        ppinewsj,
+        ppinewhyj,
+        ppinewrate,
+        ppinewhyrate,
+        ppinewpfj,
+        ppinewpfrate,
+        ppihyzkfd,
+        ppipfzkfd,
+        pphdjlb,
+        nvl(ppimaxnum,0),
+        ppipresentcode,
+        ppititle,
+        nvl(ppimaxnum,0),
+        ppipresentcode,
+        ppipresentunit,
+        nvl(ppipresentjs,0),
+        nvl(ppipresentsl,0),
+        nvl(ppipresentxl,0),
+        nvl(ppipresentjg,0),
+        pphjc,
+        pphstr1,
+        pphstr2,
+        pphstr3,
+        pphstr4,
+        pphstr5,
+        pphstr6,
+        pphiszsz,
+        pphisptgz,
+        pphistjn
+           into
+                 __ppiseq,
+           __ppibillno,
+           __ppimode,
+           __ppibarcode,
+           __ppimfid,
+           __ppicatid,
+           __ppippcode,
+           __ppispec,
+           __ppistartdate,
+           __ppienddate,
+           __ppistarttime,
+           __ppiendtime,
+           __ppizkfd,
+           __ppispace,
+           __ppinewsj,
+           __ppinewhyj,
+           __ppinewrate,
+           __ppinewhyrate,
+           __ppinewpfj,
+           __ppinewpfrate,
+           __ppihyzkfd,
+           __ppipfzkfd,
+           __pphdjlb,
+           __ppimaxnum,
+           __ppipresentcode,
+           __ppititle,
+           __ppimaxnum1,
+           __ppipresentcode1,
+           __ppipresentunit,
+           __ppipresentjs,
+           __ppipresentsl,
+           __ppipresentxl,
+           __ppipresentjg,
+           __pphjc,
+           __pphstr1,
+           __pphstr2,
+           __pphstr3,
+           __pphstr4,
+           __pphstr5,
+           __pphstr6,
+           __pphiszsz,
+           __pphisptgz,
+           __pphistjn
+        from pospopinfo
+        where   ppibillno= billno
+    return  __ppiseq,
+            __ppibillno,
+            __ppimode,
+            __ppibarcode,
+            __ppimfid,
+            __ppicatid,
+            __ppippcode,
+            __ppispec,
+            __ppistartdate,
+            __ppienddate,
+            __ppistarttime,
+            __ppiendtime,
+            __ppizkfd,
+            __ppispace,
+            __ppinewsj,
+            __ppinewhyj,
+            __ppinewrate,
+            __ppinewhyrate,
+            __ppinewpfj,
+            __ppinewpfrate,
+            __ppihyzkfd,
+            __ppipfzkfd,
+            __pphdjlb,
+            __ppimaxnum,
+            __ppipresentcode,
+            __ppititle,
+            __ppimaxnum1,
+            __ppipresentcode1,
+            __ppipresentunit,
+            __ppipresentjs,
+            __ppipresentsl,
+            __ppipresentxl,
+            __ppipresentjg,
+            __pphjc,
+            __pphstr1,
+            __pphstr2,
+            __pphstr3,
+            __pphstr4,
+            __pphstr5,
+            __pphstr6,
+            __pphiszsz,
+            __pphisptgz,
+            __pphistjn    with resume;
+    end foreach;
+
+end procedure;                                                                                                                                                           
+
+
+
+//查找促销单号
+CREATE PROCEDURE informix.sp_findyh 
+	(
+		vmkt      VARCHAR(11),  /* 门店号        */
+		vcode                       VARCHAR(14),            /* 商品条码            */
+		vgz                       VARCHAR(21),          /* 商品柜组    */
+		vdzxl                   VARCHAR(11),            /* 商品类别    */
+		vpp                       VARCHAR(7),          /* 商品品牌    */
+		vspec                   VARCHAR(3),            /* 商品规格    */
+		vscsj                   VARCHAR(20),            /* 生鲜商品的生产时间(19位)    */
+		vyhsj                   VARCHAR(20))            /* 优惠时间(2000/08/01 12:30:20)        */
+RETURNING
+		int   AS       ret                             ,                       /* 返回值                                       */
+		integer   AS   rseqno          ,                       /* 序号                 */
+		VARCHAR(16) AS rdjbh                   ,               /* 优惠单据编号         */
+		CHAR     AS    rtype                   ,                         /* 优惠类别   */
+		VARCHAR(14) AS rcode                   ,               /* 商品编码,核算码 */
+		VARCHAR(21) AS rgz                             ,               /* 柜组         */
+		VARCHAR(11) AS rdzxl                   ,               /* 商品类别             */
+		VARCHAR(7) AS rpp                             ,               /* 品牌         */
+		VARCHAR(3) AS rspec                   ,               /* 多单位规格，'00'-基础信息,'AL'-所有规格都优惠,'xx'-指定规格优惠 */
+		VARCHAR(11) AS rksrq                   ,               /* ryhlsj          ,                       /* 优惠零售价  */
+		numeric(12,2)   AS     ryhhyj          ,     /* 优惠会员价                    */
+		numeric(12,2)   AS     ryhzkl          ,     /* 优惠折扣率                    */
+		numeric(12,2)   AS     ryhhyzkl        ,           /* 优惠会员折扣率          */
+		numeric(12,2)   AS     ryhpfj          ,                       /* 优惠批发价  */
+		numeric(12,2)   AS     ryhpfzkl        ,                       /* 优惠批发折扣率                */
+		numeric(12,4)   AS     ryhhyzkfd       ,                       /* 会员折扣分担*/
+		numeric(12,4)   AS     ryhpfzkfd       ,                       /* 批发折扣分担*/
+		CHAR     AS  ryhdjlb   ,       /* 优惠单据类别       */
+		numeric(12,2)  AS      ryhxlsl         ;    /* 优惠限量数量            */
+
+----------MODIFY BY FYH FOR ryhxlsl 2003/09/09------------------------------------
+--1、增加参数ryhxlsl            OUT numeric(12,2)               /* 优惠限量数量*/
+--2、从表POSPOPINFO中取PPIMAXNUM为ryhxlsl赋值
+----------------------------------------------------------------------------------
+
+	DEFINE ret                             int             ;                     /* 返回值                                         */
+	DEFINE rseqno            integer         ;                    /* 序号         */
+	DEFINE rdjbh                   VARCHAR(16)     ;              /* 优惠单据编号 */
+	DEFINE rtype                   CHAR            ;                        /* 优惠类别                           */
+	DEFINE rcode                   VARCHAR(14)     ;              /* 商品编码,核算码 */
+	DEFINE rgz                             VARCHAR(21)     ;              /* 柜组 */
+	DEFINE rdzxl                   VARCHAR(11)     ;              /* 商品类别     */
+	DEFINE rpp                             VARCHAR(7)     ;              /* 品牌 */
+	DEFINE rspec                   VARCHAR(3)     ;              /* 多单位规格，'00'-基础信息,'AL'-所有规格都优惠,'xx'-指定规格优惠 */
+	DEFINE rksrq                   VARCHAR(11)     ;              /* 开始日期     */
+	DEFINE rjsrq                   VARCHAR(11)     ;              /* 结束日期     */
+	DEFINE rkssj                   VARCHAR(6)     ;              /* 开始时间     */
+	DEFINE rjssj                   VARCHAR(6)     ;              /* 结束时间     */
+	DEFINE rzkfd                   numeric(12,2)   ;                      /* 优惠折扣分担                 */
+	DEFINE ryhspace          numeric(12,2)   ;                    /* 电子秤商品的优惠的时间间隔  */
+	DEFINE ryhlsj            numeric(12,2)   ;                    /* 优惠零售价  */
+	DEFINE ryhhyj            numeric(12,2)   ;     /* 优惠会员价                 */
+	DEFINE ryhzkl            numeric(12,2)   ;     /* 优惠折扣率                 */
+	DEFINE ryhhyzkl          numeric(12,2)   ;        /* 优惠会员折扣率          */
+	DEFINE ryhpfj            numeric(12,2)   ;                    /* 优惠批发价  */
+	DEFINE ryhpfzkl          numeric(12,2)   ;                    /* 优惠批发折扣率                */
+	DEFINE ryhhyzkfd       numeric(12,4)   ;                      /* 会员折扣分担*/
+	DEFINE ryhpfzkfd       numeric(12,4)   ;                      /* 批发折扣分担*/
+	DEFINE  ryhdjlb    CHAR            ;       /* 优惠单据类别       */
+	DEFINE ryhxlsl                 numeric(12,2)   ;    /* 优惠限量数量          */
+	DEFINE l_SaleSL                numeric(12,2)   ;    /* 优惠限量数量          */
+
+	DEFINE vseqno   numeric(12,2);
+	DEFINE vscsjjg  numeric(12,2);
+	DEFINE vsj           CHAR(5);
+
+	DEFINE vminpriceseqno   numeric(12,2);
+	DEFINE vminpricemode    CHAR;
+
+	define __Err,__BreakPoint,__ISAM      int;
+	define __Msg       varchar(255);
+	ON EXCEPTION SET __Err,__ISAM,__Msg
+		let ret = 0;         
+		Return ret,rseqno,rdjbh,rtype,rcode,rgz,rdzxl,rpp,rspec,rksrq,rjsrq,rkssj,
+		rjssj,rzkfd,ryhspace,ryhlsj,ryhhyj, ryhzkl, ryhhyzkl,ryhpfj,ryhpfzkl,
+		ryhhyzkfd,ryhpfzkfd, ryhdjlb,ryhxlsl;
+	END EXCEPTION;
+
+	LET rseqno    = 0;
+	LET rdjbh     = '';
+	LET rtype     = '0';
+	LET rcode     = '';
+	LET rgz       = '';
+	LET rdzxl     = '';
+	LET rpp       = '';
+	LET rspec     = '';
+	LET rksrq     = '';
+	LET rjsrq     = '';
+	LET rkssj     = '';
+	LET rjssj     = '';
+	LET rzkfd     = 0;
+	LET ryhspace  = 0;
+	LET ryhlsj    = 0;
+	LET ryhhyj    = 0;
+	LET ryhzkl    = 0;
+	LET ryhhyzkl  = 0;
+	LET ryhpfj    = 0;
+	LET ryhpfzkl  = 0;
+	LET ryhhyzkfd = 0;
+	LET ryhpfzkfd = 0;
+	LET  ryhdjlb  = '';
+	LET ryhxlsl   = 0;
+	LET l_SaleSL  = 0;
+  
+	IF vyhsj IS NULL OR vyhsj = '' THEN
+		let ret = 0;
+		RETURN;
+	END IF;
+
+	SELECT TO_CHAR(TO_DATE(vyhsj,'%Y/%m/%d %H:%M:%S'),'%H:%M') INTO vsj FROM timemaker;
+
+	IF LTRIM(vscsj) IS NULL THEN
+		let vscsjjg = 0;
+	ELSE
+		let  vscsjjg=(TO_DATE(vyhsj,'%Y/%m/%d %H:%M:%S') - TO_DATE(vscsj,'%Y/%m/%d %H:%M:%S'))*24*60;
+	END IF;
+     
+	LET vminpriceseqno = 0;
+	LET vminpricemode = '0';
+	
+	/*查询有效期内单品的最底价优惠*/
+	select  FIRST 1 ppiseq,ppimode,ppinewsj 
+	INTO vminpriceseqno,vminpricemode,ryhlsj 
+	from (
+	SELECT NVL(PPISEQ,0) ppiseq,PPIMODE,NVL(PPINEWSJ,0) ppinewsj
+	FROM POSPOPINFO
+	WHERE (rseqno=0 OR PPISEQ < rseqno) AND
+		PPISTARTDATE <=today AND
+		PPIENDDATE   >=today   And
+		PPISTARTTIME <= vsj         AND
+		PPIENDTIME   >= vsj   And
+	Exists (Select 'x'
+		From POSPOPINFOTIME A
+		Where  A.PPIBILLNO = PPIBILLNO And
+				A.PPIKSRQ  <=today And
+				A.PPIJSRQ  >= today And
+				A.PPIKSSJ <= vsj And
+				A.PPIJSSJ >= vSj
+              ) And
+			PPHDJLB ='1' AND
+		(
+		 (PPIBARCODE = vcode AND (PPIMFID = vgz OR PPIMFID = '0') AND
+		  NVL(LTRIM(PPISPEC),'00') = NVL(LTRIM(vspec),'00') AND PPIMAXNUM <> 0 AND
+		  (PPIMODE = '1' OR (PPIMODE = '7' AND vscsjjg >= PPISPACE)) AND
+		  NVL(PPINEWSJ,0) > 0
+		 )
+		) ORDER BY PPINEWSJ
+		
+	);
+
+        SELECT NVL(MAX(PPISEQ),0)
+          INTO vseqno
+                FROM POSPOPINFO
+                WHERE (rseqno=0 OR PPISEQ < rseqno) AND
+                                PPISTARTDATE <=today AND
+                           PPIENDDATE   >=today   And
+                    PPISTARTTIME <= vsj         AND
+                        PPIENDTIME   >= vsj   And
+      Exists (Select 'x'
+              From POSPOPINFOTIME A
+              Where  A.PPIBILLNO = PPIBILLNO And
+                     A.PPIKSRQ  <=today And
+                     A.PPIJSRQ  >= today And
+                     A.PPIKSSJ <= vsj And
+                     A.PPIJSSJ >= vSj
+              ) And
+       PPHDJLB ='1'                 AND
+      (
+       (PPIBARCODE = vcode AND (PPIMFID = vgz OR PPIMFID = '0') AND
+         NVL(LTRIM(PPISPEC),'00') = NVL(LTRIM(vspec),'00') AND PPIMAXNUM <> 0 AND
+         (PPIMODE = '1' OR (PPIMODE = '7' AND vscsjjg >= PPISPACE))
+       ) OR
+       (PPIBARCODE = vgz AND PPIMODE = '2') OR
+       (PPIBARCODE = vgz AND PPIPPCODE = vpp AND PPIMODE = '4') OR
+       (PPIBARCODE = vdzxl AND PPIMODE = '3') OR
+       (PPIBARCODE = vdzxl AND PPIPPCODE = vpp AND PPIMODE = '5') OR
+       (PPIBARCODE = vpp AND PPIMODE = '6')
+      );
+
+	IF vseqno = 0 THEN
+		let ret = 0;
+    
+		Return ret,rseqno,rdjbh,rtype,rcode,rgz,rdzxl,rpp,rspec,rksrq,rjsrq,rkssj,
+            rjssj,rzkfd,ryhspace,ryhlsj,ryhhyj, ryhzkl, ryhhyzkl,ryhpfj,ryhpfzkl,
+            ryhhyzkfd,ryhpfzkfd, ryhdjlb,ryhxlsl;
+	END IF;
+
+	SELECT PPISEQ,PPIMODE,PPIBILLNO,PPIBARCODE,PPIMFID,PPICATID,PPIPPCODE,PPISPEC,PPINEWSJ,PPINEWHYJ,PPINEWRATE,PPINEWHYRATE,PPIZKFD,
+       TO_CHAR(PPISTARTDATE,'%Y/%m/%d'),TO_CHAR(PPIENDDATE,'%Y/%m/%d'),PPISTARTTIME,PPIENDTIME,PPISPACE,
+       PPINEWPFJ,PPINEWPFRATE,PPIHYZKFD,PPIPFZKFD,nvl(PPIMAXNUM,0)
+    INTO rseqno,rtype,rdjbh,rcode,rgz,rdzxl,rpp,rspec,ryhlsj,ryhhyj,ryhzkl,ryhhyzkl,rzkfd,
+       rksrq,rjsrq,rkssj,rjssj,ryhspace,
+       ryhpfj,ryhpfzkl,ryhhyzkfd,ryhpfzkfd,ryhxlsl
+    FROM POSPOPINFO
+    WHERE PPISEQ = vseqno;
+    
+	/*如果当前商品找到单品的最底价促销单,则底价优先*/
+	IF vminpriceseqno > 0 AND vminpricemode = rtype THEN
+		SELECT PPISEQ,PPIMODE,PPIBILLNO,PPIBARCODE,PPIMFID,PPICATID,PPIPPCODE,PPISPEC,PPINEWSJ,PPINEWHYJ,PPINEWRATE,PPINEWHYRATE,PPIZKFD,
+	       TO_CHAR(PPISTARTDATE,'%Y/%m/%d'),TO_CHAR(PPIENDDATE,'%Y/%m/%d'),PPISTARTTIME,PPIENDTIME,PPISPACE,
+	       PPINEWPFJ,PPINEWPFRATE,PPIHYZKFD,PPIPFZKFD,nvl(PPIMAXNUM,0)
+	    INTO rseqno,rtype,rdjbh,rcode,rgz,rdzxl,rpp,rspec,ryhlsj,ryhhyj,ryhzkl,ryhhyzkl,rzkfd,
+	       rksrq,rjsrq,rkssj,rjssj,ryhspace,
+	       ryhpfj,ryhpfzkl,ryhhyzkfd,ryhpfzkfd,ryhxlsl
+	    FROM POSPOPINFO
+	    WHERE PPISEQ = vminpriceseqno;
+	END IF;
+    
+    LET ryhxlsl = -9999;
+   /*如果存在促销限量,则取已经发生的销售数量*/
+   /*
+  IF ryhxlsl > 0 THEN
+    SELECT NVL(SUM(BZHL * SL * SALEFLAG), 0) 
+          INTO l_SaleSL
+      FROM SALEPOPGOODS
+     WHERE GDID = rcode
+       AND POPBNO = rdjbh
+       AND MFID = rgz;
+    IF l_SaleSL > 0 THEN
+       let ryhxlsl = ryhxlsl - l_SaleSL;
+       IF ryhxlsl <= 0 THEN
+          let ryhxlsl = 0;
+       END IF;
+       EXIT WHILE;
+    END IF;
+ END IF;
+ */
+
+  let ret = 1;
+  Return ret,rseqno,rdjbh,rtype,rcode,rgz,rdzxl,rpp,rspec,rksrq,rjsrq,rkssj,
+         rjssj,rzkfd,ryhspace,ryhlsj,ryhhyj, ryhzkl, ryhhyzkl,ryhpfj,ryhpfzkl,
+         ryhhyzkfd,ryhpfzkfd, ryhdjlb,ryhxlsl;
+END PROCEDURE                                                                                                                                                                                                                                                      
+
+
+//查找单据明细

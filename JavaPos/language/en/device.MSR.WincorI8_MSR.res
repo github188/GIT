@@ -1,0 +1,1 @@
+WincorI8款机键盘口刷卡槽 = WincorI8 POS keyboard port Swiping card slot

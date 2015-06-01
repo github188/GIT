@@ -1,0 +1,11 @@
+系统参数表 =System parameter table
+描述 =Description
+数据库 =Database
+表名 =Table names
+查询数据 =Query data
+您要查找的本地数据库不存在[{0}]! =The local database does not exist which you want to find [{0}]!
+[{0}]库名称不正确! =[{0}]Database name is incorrect!
+你将要执行的SQL不是SELECT语句\n可能会改变数据库的数据\n\n你确定要执行吗？ =SQL which you want to perform is not SELECT statement\n may change the data in the database\n\n Are you sure you want to perform it?
+行数据发生改变\n\n你确定要提交执行结果吗？ =Line data changes\n\n Are you sure you want to submit the results of it?
+SQL执行结果提交完成 =SQL execution results to be completed
+SQL执行结果已被撤销 =SQL execution results have been revoked

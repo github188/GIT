@@ -1,0 +1,43 @@
+1.验卡/激活：
+过程名：JAVA_SALEMZK
+传入参数：mkt,fphm,syjh,tradetype,track2,memo
+即 门店号,发票号码，收银机号，交易类型（01-验卡/02-激活），轨道数据（若类型是01，则存放的是单张卡;若类型是02，则存放的是多张卡，并以逗号隔开,如card1,card2,card3,.....），备注
+
+传出参数:retcode,retmsg,cardno,cardtype,money,memo
+即 返回值（0-成功/非0-失败），错误描述，卡号，卡类型，面额，备注
+	若是类型是02，则cardno,money,memo均返回空
+
+	
+	
+	
+2.app用券
+沿用JAVA_SENDMZK,根据请求参数中的付款编码(paycode)来区别app券,(05-查询,01-消费)
+由于用券的时候有单品和整单之分，所以，后台在查询券余额（类型为05)时，就得将该券可收的哪些商品编码返回给前台，约定str2存放可用券的商品编码
+	I.若可收多个单品，str2返回形如 编码1,编码2,编码3...... 的数据。
+	II.若收整单，str2直接返回空
+	
+	
+
+对以上约定若感不妥，欢迎补充！！！
+
+JAVA_SALEMZK 
+    @vmktcode        char(4),           /* 门店号                       */
+    @vfphm	     int,		/* 小票号		        */
+    @vsyyh	     char(5),	        /* 收银员号		        */
+    @vsyjh	     char(4),	        /* 收银机号     			*/
+    @vtype           VARCHAR(255),      /* 交易类型,01-验卡/02-激活      */
+    @vtrack2         varchar(2000),     /* 磁道二                       */    
+    @vcash           dec(8,2),          /*现金金额（扣除找零）           */
+    @vbank           dec(8,2),          /*银行卡金额                     */
+    @vcardfee        dec(8,2),          /*工本费                        */     
+    @vmemo           varchar(255),      /*备注                          */
+    
+    
+   
+    @retcode	     int	output ,		/* 返回值					    */
+    @retmsg          varchar(255) output,   /* 返回提示信息                 */
+
+    @rcardno         varchar(255) output,   /* 卡号                         */
+    @rcardtype       varchar(255) output,   /* 类别                       */     
+    @rmoney          dec(8,2) output,     /* 面值                         */     
+    @rmemo           varchar(255) output

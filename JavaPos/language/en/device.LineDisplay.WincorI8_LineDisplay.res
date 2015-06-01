@@ -1,0 +1,1 @@
+WincorI8款机串口顾客显示牌 = WincorI8 POS serial port customer board

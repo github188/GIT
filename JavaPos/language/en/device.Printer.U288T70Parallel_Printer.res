@@ -1,0 +1,1 @@
+U288-T70标准并口打印机 = U288-T70 Standard parallel port printer

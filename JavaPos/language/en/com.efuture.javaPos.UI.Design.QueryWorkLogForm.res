@@ -1,0 +1,12 @@
+查询工作日志 =Query work log
+序号 =Seq#
+工作时间 =Working time
+收银员号 =cashier#
+工作备注 =Work note
+请输入查询日期 =Query Date
+格式为:YYYYMMDD =Format:YYYYMMDD
+类型 =Type
+全部日志 =Logs
+登入登出 =Login logout
+异常日志 =Abnormal log
+[付款键切换输入] =【Payment key to switch input】

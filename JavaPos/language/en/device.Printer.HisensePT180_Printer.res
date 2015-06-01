@@ -1,0 +1,1 @@
+HisensePT180款机的串口黑标打印机 = HisensePT180 POS serial port black label printer

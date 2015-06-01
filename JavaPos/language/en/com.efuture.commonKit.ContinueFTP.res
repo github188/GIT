@@ -1,0 +1,11 @@
+登陆异常，请检查主机端口 = Login error, please check the Host Port
+登陆异常，请检查密码账号 = Login error, please check the password account
+登陆异常 = Login error
+远程文件不存在 = Remote file does not exist
+本地文件大于远程文件，下载中止 = Local file greater than the remote file, download terminated
+下载进度： = Download progress:
+下载文件时： = When download file:
+超时时间设置： = Timeout set: 
+创建目录失败 = Create directory failed
+上传进度: = Upload progress:
+连接FTP出错： = When connect FTP, error occurred:

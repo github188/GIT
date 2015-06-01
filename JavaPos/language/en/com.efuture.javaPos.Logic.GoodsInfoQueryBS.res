@@ -1,0 +1,20 @@
+此商品没有明细... =This product have no details ...
+未找到商品明细信息! =Can not find product's details!
+商品查询功能须在联网状态下使用 =Goods query functionality must be used online
+输入框不能为空... =Input box can not be empty...
+输入框2不能为空... =Input box2 can not be empty
+正在查询商品..... =Goods being queried.....
+未找到此商品... =This goods was not found..
+出错:加载模板失败!\n模板文件地址为: =Error:Failed to load template!\n Template file address:
+;查询类别 = 查询条件说明 ; 脱网查询SQL语句 ; 联网查询SQL语句; 文本框接收字符类型;文本框接收查询字符串长度下限\r\n =;Query category = Query conditions description ; Offline SQL query statement ; Online SQL query statement ;Text box to accept the type of character；The lower limit of the length of the text box to receive query strings \r\n
+;0,商品条码(BARCODE;PGBARCODE)\r\n =;0,Barcode(BARCODE;PGBARCODE)\r\n 
+;1,商品代码(CODE;PGGDID)\r\n =Code(CODE;PGGDID)\r\n 
+;2,商品分析码(FXM;PGANALCODE)\r\n =Analysis code(FXM;PGANALCODE)\r\n 
+商品条码 =Barcode
+商品代码 =Code
+商品分析码 =Analysis code
+设置\" =Setting\"
+且 =And
+或 =OR
+条件组合查询\"成功 =Condition combination query\"Success
+清除查询结果成功 =Clear query result successfully!

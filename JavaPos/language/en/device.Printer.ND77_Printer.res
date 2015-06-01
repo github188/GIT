@@ -1,0 +1,1 @@
+ND77款机的串口打印机 = ND77 POS the serial port of the printer
