@@ -341,7 +341,11 @@ public class Cbbh_PaymentZfb extends Bcrm_PaymentMzk {
 		salepay.str3 = mzkret.str3;
 		salepay.str4 = mzkret.str4;
 
-		salepay.payno = String.valueOf(mzkreq.seqno);	  		//记录当前交易号
+		if (SellType.ISSALE(saleBS.saletype))
+			salepay.payno = String.valueOf(mzkreq.seqno);	  		//记录当前交易号
+		else
+			salepay.payno = mzkreq.track2;	  						//记录当前交易号
+		
 		salepay.memo = mzkreq.track2;				  			//记录当前的券号		
 	}
 	

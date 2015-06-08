@@ -1,11 +1,19 @@
 package custom.localize.Cbbh;
 
+import java.io.BufferedReader;
+import java.rmi.RemoteException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Vector;
 
+import javax.xml.rpc.ServiceException;
+
 import com.efuture.DeBugTools.PosLog;
+import com.efuture.commonKit.CommonMethod;
 import com.efuture.commonKit.Convert;
-import com.efuture.commonKit.ManipulatePrecision;
 import com.efuture.commonKit.MessageBox;
 import com.efuture.javaPos.Communication.CmdDef;
 import com.efuture.javaPos.Communication.CmdHead;
@@ -39,17 +47,128 @@ public class Cbbh_NetService extends Cbbh_Crm_NetService//Bcrm_NetService
 	 public static final int GETZZFPDETAIL = 829;            //获取转正发票商品明细信息
 	 public static final int GETZZFPPAYSALEDETAIL = 830;            //获取转正发票付款明细信息
 
-	 public static final int GETTICKETPOP = 831;            //重新获取整单参与的促销
-	 
+	 public static final int GETTICKETPOP = 831;            //重新获取整单参与的促销	 
 	 public static final int GETGOODSPOPLIST_BACK = 841;            //获取商品促销列表(退换货)
 	 public static final int SELECTGOODSPOP_BACK = 842;            //选择商品促销(退换货)
 	 public static final int ALLSALELIST_BACK = 843;            //获取整单促销规则(退换货)
 	 public static final int GETKPGOODSLIST_BACK = 844;            //获取开票商品明细(退换货) 
 	 public static final int CHECKPAYMENT_BACK = 845;            //检查受限付款方式(退换货)
 	 
-	 
 	 public static final int GETWCCRULES = 833;					//查询微信券的收券规则
 	 
+	 public HashMap<String,String> getSapWebService() {
+			BufferedReader br = null;
+			String configName = GlobalVar.ConfigPath + "//CbbhWebService.ini";
+			String line = null;
+			br = CommonMethod.readFile(configName);
+			
+			HashMap<String, String> map = new HashMap<String,String>();
+
+			try {
+				while ((line = br.readLine()) != null) 
+				{
+					String[] row = line.split("=");
+					map.put(row[0].trim(), row[1].trim());					
+				}
+				return map;
+			} 
+			catch (Exception e) 
+			{
+				e.printStackTrace();
+			}
+			return null;
+		}
+	 
+	 //获取家电开票的赊销金额-webservice
+	 public double getCredit(String id)
+	 {
+		 DT_CREDIT_INFO_REQ request = new DT_CREDIT_INFO_REQ(id);
+		 SI_CREDIT_INFO_OUT_SYNServiceLocator service =  new SI_CREDIT_INFO_OUT_SYNServiceLocator();
+		 
+		 HashMap<String,String> map =  getSapWebService();
+		 String url = map.get("Credit_Url");
+		 String user = map.get("Credit_User");
+		 String pwd = map.get("Credit_Pwd");
+		 if(!CommonMethod.isNull(url)) 
+			 service.setHTTP_PortEndpointAddress(url);
+		 
+		 if(CommonMethod.isNull(user) || CommonMethod.isNull(pwd))
+		 {
+			 user = "EFUT_USER";
+			 pwd = "123456";
+		 }
+
+		 SI_CREDIT_INFO_OUT_SYNBindingStub call = null;
+		 DT_CREDIT_INFO_RESP response = null;
+		 try {
+			call = (SI_CREDIT_INFO_OUT_SYNBindingStub) service.getHTTP_Port();
+			call.setUsername(user);
+			call.setPassword(pwd);
+			
+			if(call != null) response = call.SI_CREDIT_INFO_OUT_SYN(request);
+			if(response != null) return Double.valueOf(response.getSKFOR()).doubleValue();
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			PosLog.getLog(getClass()).error(e);
+			new MessageBox("连接SAP-WEBSERVICE出现异常");
+		}
+		 
+		 return 0;
+	 }
+	 
+	 //获取家电开票商品的库存-webservice
+	 public double getCommodStock(SaleGoodsDef good,String mkt,String depot)
+	 {
+		 HashMap<String,String> map =  getSapWebService();
+		 String url = map.get("Stock_Url");
+		 String user = map.get("Stock_User");
+		 String pwd = map.get("Stock_Pwd");
+		 
+		 DT_ATP_CHECK_REQ request = new DT_ATP_CHECK_REQ();
+		 request.setMATERIAL(good.code); //code
+		 request.setPLANT(GlobalInfo.sysPara.mktcode);//mkt
+		 request.setUNIT(good.unit);//unit
+		 request.setSTGE_LOC(depot);//库存地点
+
+		 SI_ATP_CHECK_OUT_SYNServiceLocator service =  new SI_ATP_CHECK_OUT_SYNServiceLocator();
+		 
+		 if(!CommonMethod.isNull(url)) 
+			 service.setHTTP_PortEndpointAddress(url);
+		 
+		 if(CommonMethod.isNull(user) || CommonMethod.isNull(pwd))
+		 {
+			 user = "EFUT_USER";
+			 pwd = "123456";
+		 }
+		 
+		 SI_ATP_CHECK_OUT_SYNBindingStub call = null;
+		 DT_ATP_CHECK_RESPWMDVEX[] response = null;
+		 
+		 try {
+			 
+			call = (SI_ATP_CHECK_OUT_SYNBindingStub) service.getHTTP_Port();
+			
+			call.setUsername(user);
+			call.setPassword(pwd);
+
+			if(call != null) response = call.SI_ATP_CHECK_OUT_SYN(request);
+			if(response != null && response.length > 0)
+			{
+				String date = null;
+				date = (new SimpleDateFormat("yyyy-MM-dd")).format(new Date());
+				for(DT_ATP_CHECK_RESPWMDVEX item : response)
+					if(item.getCOM_DATE().equals(date))
+						return Double.valueOf(item.getCOM_QTY()).doubleValue();
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			PosLog.getLog(getClass()).error(e);
+			new MessageBox("连接SAP-WEBSERVICE出现异常");
+		}
+		 
+		 return 0;
+	 }
 	
 	 public boolean findWCCRules(String billno,Vector wccrules)
 	 {
@@ -1804,5 +1923,5 @@ public class Cbbh_NetService extends Cbbh_Crm_NetService//Bcrm_NetService
 	/*public void setcrmpopgoods(Vector crmpopgoodsdetail) {
 		popgoods = crmpopgoodsdetail;
 	}*/
-	
+		
 }

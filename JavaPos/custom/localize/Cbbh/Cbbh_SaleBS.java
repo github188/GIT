@@ -4247,114 +4247,121 @@ public class Cbbh_SaleBS extends Cbbh_THHNew_SaleBS//Cbbh_THH_SaleBS
 //				品牌卡
 				String ppid="";
 				double ppcardzk = 0;
-					for (int i = 0; i < v1.size(); i++)
+				for (int i = 0; i < v1.size(); i++)
+				{
+					CrmPopDetailDef cpd=(CrmPopDetailDef)v1.elementAt(i);
+					SaleGoodsDef sgd=new SaleGoodsDef();
+					sgd.syjh = GlobalInfo.syjDef.syjh;
+					sgd.rowno = cpd.rowno;
+					sgd.barcode=cpd.barcode;
+					sgd.name = cpd.gbname;
+					sgd.code=cpd.gdid;
+					sgd.yyyh=saleEvent.yyyh.getText();
+					sgd.name=cpd.gbname;
+					sgd.gz=saleEvent.gz.getText();
+					sgd.unit=cpd.unit;
+					sgd.jg=cpd.sj;
+					
+					sgd.sl=cpd.sl;
+					
+					sgd.catid = cpd.catid;
+					sgd.ppcode = cpd.ppid;
+					sgd.hjje=sgd.jg*sgd.sl;
+					sgd.num3 = cpd.gdpopzk;
+					sgd.num4 = cpd.rulepopzk;
+					sgd.num5 = cpd.zdrulepopzk;
+					sgd.num6 = cpd.lszk;
+					sgd.lszre = cpd.lszk;
+					
+					sgd.num7 = Convert.toDouble(code);//家电开单号
+					
+					sgd.ysyjh = cpd.str1;//家电退货原收银机号
+					sgd.yfphm = Convert.toLong(cpd.str2);//家电退货原小票号
+					
+					sgd.flag='4';//crm需要
+					sgd.type='1';//crm需要
+					
+//					sgd.yfphm = Convert.toLong(cpd.str2);
+//					sgd.ysyjh = cpd.str1;
+					
+					//转换单位名称
+					sgd.str2 = cpd.unit;
+					sgd.unit = cpd.unitname;
+					//重算折扣
+					getZZK(sgd);
+					
+					crmpopgoodsdetail.add(cpd);
+					
+					//加入商品列表
+					addSaleGoodsObject(sgd, new GoodsDef(), new SpareInfoDef());
+					
+					//添加店长卡
+					if(cpd.shopcardzk > 0)
 					{
-						CrmPopDetailDef cpd=(CrmPopDetailDef)v1.elementAt(i);
-						
-						SaleGoodsDef sgd=new SaleGoodsDef();
-						
-							sgd.syjh = GlobalInfo.syjDef.syjh;
-							sgd.rowno = cpd.rowno;
-							sgd.barcode=cpd.barcode;
-							sgd.name = cpd.gbname;
-							sgd.code=cpd.gdid;
-							sgd.yyyh=saleEvent.yyyh.getText();
-							sgd.name=cpd.gbname;
-							sgd.gz=saleEvent.gz.getText();
-							sgd.unit=cpd.unit;
-							sgd.jg=cpd.sj;
-							sgd.sl=cpd.sl;
-							sgd.catid = cpd.catid;
-							sgd.ppcode = cpd.ppid;
-							sgd.hjje=sgd.jg*sgd.sl;
-							sgd.num3 = cpd.gdpopzk;
-							sgd.num4 = cpd.rulepopzk;
-							sgd.num5 = cpd.zdrulepopzk;
-							sgd.num6 = cpd.lszk;
-							sgd.lszre = cpd.lszk;
-							
-							sgd.num7 = Convert.toDouble(code);//家电开单号
-							
-							sgd.ysyjh = cpd.str1;//家电退货原收银机号
-							sgd.yfphm = Convert.toLong(cpd.str2);//家电退货原小票号
-							
-							sgd.flag='4';//crm需要
-							sgd.type='1';//crm需要
-							
-//							sgd.yfphm = Convert.toLong(cpd.str2);
-//							sgd.ysyjh = cpd.str1;
-							
-							
-							//转换单位名称
-							sgd.str2 = cpd.unit;
-							sgd.unit = cpd.unitname;
-//							// 重算折扣
-							getZZK(sgd);
-							
-
-							crmpopgoodsdetail.add(cpd);
-							
-							//加入商品列表
-							addSaleGoodsObject(sgd, new GoodsDef(), new SpareInfoDef());
-							
-							
-							//添加店长卡
-							if(cpd.shopcardzk > 0)
-							{
-								shopcard = cpd.shopcard;
-								shopcardzk += cpd.shopcardzk;
-							}
-							//添加品类卡
-							if(cpd.catcardzk > 0)
-							{
-								catcard = cpd.catcard;
-								catcardzk += cpd.catcardzk;
-							}
-							//添加品牌卡
-							if(cpd.ppcardzk > 0)
-							{
-								ppid = cpd.ppid;
-								ppcardzk += cpd.ppcardzk;
-							}
-
+						shopcard = cpd.shopcard;
+						shopcardzk += cpd.shopcardzk;
+					}
+					//添加品类卡
+					if(cpd.catcardzk > 0)
+					{
+						catcard = cpd.catcard;
+						catcardzk += cpd.catcardzk;
+					}
+					//添加品牌卡
+					if(cpd.ppcardzk > 0)
+					{
+						ppid = cpd.ppid;
+						ppcardzk += cpd.ppcardzk;
+					}
+					if(SellType.ISSALE(saletype))
+					{
+						double sl = ((Cbbh_NetService)NetService.getDefault()).getCommodStock(sgd, GlobalInfo.sysPara.mktcode, cpd.str1);
+					
+						if(sl < sgd.sl)
+						{
+							new MessageBox("商品["+sgd.code+"]在["+cpd.str1+"]库存为["+sl+"],不能销售！");
+							return false;
+						}
 					}
 					
-					if(shopcardzk > 0)
-					{
-						PayModeDef paymode = DataService.getDefault().searchPayMode(dzkcode);
-						if(paymode == null){new MessageBox("找不到"+lbkcode+"付款方式！"); return false;}
+					//存储客户ID
+					saleHead.cczz_zktmp = cpd.str2;
+				}
+				
+				if(shopcardzk > 0)
+				{
+					PayModeDef paymode = DataService.getDefault().searchPayMode(dzkcode);
+					if(paymode == null){new MessageBox("找不到"+lbkcode+"付款方式！"); return false;}
 
 //						保存付款方式
-						SalePayDef sp = savesalepay(paymode,shopcard,shopcardzk);
-						
-						addSalePay.add(sp);
-					}
+					SalePayDef sp = savesalepay(paymode,shopcard,shopcardzk);
 					
-					if(catcardzk > 0)
-					{
-						PayModeDef paymode = DataService.getDefault().searchPayMode(lbkcode);
-						if(paymode == null){new MessageBox("找不到"+lbkcode+"付款方式！"); return false;}						
+					addSalePay.add(sp);
+				}
+				
+				if(catcardzk > 0)
+				{
+					PayModeDef paymode = DataService.getDefault().searchPayMode(lbkcode);
+					if(paymode == null){new MessageBox("找不到"+lbkcode+"付款方式！"); return false;}						
 
 //						保存付款方式
-						SalePayDef sp = savesalepay(paymode,catcard,catcardzk);
-						
-						addSalePay.add(sp);
-					}
+					SalePayDef sp = savesalepay(paymode,catcard,catcardzk);
 					
-					if(ppcardzk > 0)
-					{
-						PayModeDef paymode = DataService.getDefault().searchPayMode(ppkcode);
-						if(paymode == null){new MessageBox("找不到"+ppkcode+"付款方式！"); return false;}						
+					addSalePay.add(sp);
+				}
+				
+				if(ppcardzk > 0)
+				{
+					PayModeDef paymode = DataService.getDefault().searchPayMode(ppkcode);
+					if(paymode == null){new MessageBox("找不到"+ppkcode+"付款方式！"); return false;}						
 
-						//保存付款方式
-						SalePayDef sp = savesalepay(paymode,ppid,ppcardzk);
-						
-						addSalePay.add(sp);
-					}
+					//保存付款方式
+					SalePayDef sp = savesalepay(paymode,ppid,ppcardzk);
 					
-					
-					//记录开单序号
-					saleHead.num1 = Convert.toDouble(code);
+					addSalePay.add(sp);
+				}
+				//记录开单序号
+				saleHead.num1 = Convert.toDouble(code);
 			}
 			
 			saveGoodsReplacePopGoodsList();
@@ -4364,14 +4371,13 @@ public class Cbbh_SaleBS extends Cbbh_THHNew_SaleBS//Cbbh_THH_SaleBS
 			
 			refreshSaleForm();
 			
-			
 			return true;
-			}
+		}
 		catch(Exception er)
-			{
-				er.printStackTrace();
-				return false;
-			}
+		{
+			er.printStackTrace();
+			return false;
+		}
 	}
 	
 	//保存家电三种卡信息
