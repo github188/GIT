@@ -86,9 +86,17 @@ public class Cbbh_NetService extends Cbbh_Crm_NetService//Bcrm_NetService
 		 SI_CREDIT_INFO_OUT_SYNServiceLocator service =  new SI_CREDIT_INFO_OUT_SYNServiceLocator();
 		 
 		 HashMap<String,String> map =  getSapWebService();
-		 String url = map.get("Credit_Url");
-		 String user = map.get("Credit_User");
-		 String pwd = map.get("Credit_Pwd");
+		 String url = null;
+		 String user = null;
+		 String pwd = null;
+		 
+		 if(map != null) 
+		 {
+			url = map.get("Credit_Url");
+		 	user = map.get("Credit_User");
+		 	pwd = map.get("Credit_Pwd");
+		 }
+		 
 		 if(!CommonMethod.isNull(url)) 
 			 service.setHTTP_PortEndpointAddress(url);
 		 
@@ -121,16 +129,30 @@ public class Cbbh_NetService extends Cbbh_Crm_NetService//Bcrm_NetService
 	 public double getCommodStock(SaleGoodsDef good,String mkt,String depot)
 	 {
 		 HashMap<String,String> map =  getSapWebService();
-		 String url = map.get("Stock_Url");
-		 String user = map.get("Stock_User");
-		 String pwd = map.get("Stock_Pwd");
+		 String url = null;
+		 String user = null;
+		 String pwd = null;
 		 
+		 if(map != null) 
+		 {
+			 url = map.get("Stock_Url");
+		 	 user = map.get("Stock_User");
+		     pwd = map.get("Stock_Pwd");
+		 }
+
 		 DT_ATP_CHECK_REQ request = new DT_ATP_CHECK_REQ();
+		 
 		 request.setMATERIAL(good.code); //code
 		 request.setPLANT(GlobalInfo.sysPara.mktcode);//mkt
 		 request.setUNIT(good.unit);//unit
 		 request.setSTGE_LOC(depot);//库存地点
-
+		 
+		 /*	
+		 request.setMATERIAL("84000003002"); //code
+		 request.setPLANT("3002");//mkt
+		 request.setUNIT("EA");//unit
+		 request.setSTGE_LOC("0001");//库存地点
+		 */
 		 SI_ATP_CHECK_OUT_SYNServiceLocator service =  new SI_ATP_CHECK_OUT_SYNServiceLocator();
 		 
 		 if(!CommonMethod.isNull(url)) 
@@ -163,6 +185,7 @@ public class Cbbh_NetService extends Cbbh_Crm_NetService//Bcrm_NetService
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
+			e.printStackTrace();
 			PosLog.getLog(getClass()).error(e);
 			new MessageBox("连接SAP-WEBSERVICE出现异常");
 		}

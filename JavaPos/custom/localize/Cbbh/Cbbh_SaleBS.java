@@ -4290,6 +4290,19 @@ public class Cbbh_SaleBS extends Cbbh_THHNew_SaleBS//Cbbh_THH_SaleBS
 					//重算折扣
 					getZZK(sgd);
 					
+					//判断库存
+					if(SellType.ISSALE(saletype))
+					{
+						double sl = 0;
+						sl = ((Cbbh_NetService)NetService.getDefault()).getCommodStock(sgd, GlobalInfo.sysPara.mktcode, cpd.str1);
+						
+						if(sl < sgd.sl)
+						{
+							new MessageBox("商品["+sgd.code+"]在["+cpd.str1+"]库存为["+sl+"],不能销售！");
+							return false;
+						}
+					}
+					
 					crmpopgoodsdetail.add(cpd);
 					
 					//加入商品列表
@@ -4312,16 +4325,6 @@ public class Cbbh_SaleBS extends Cbbh_THHNew_SaleBS//Cbbh_THH_SaleBS
 					{
 						ppid = cpd.ppid;
 						ppcardzk += cpd.ppcardzk;
-					}
-					if(SellType.ISSALE(saletype))
-					{
-						double sl = ((Cbbh_NetService)NetService.getDefault()).getCommodStock(sgd, GlobalInfo.sysPara.mktcode, cpd.str1);
-					
-						if(sl < sgd.sl)
-						{
-							new MessageBox("商品["+sgd.code+"]在["+cpd.str1+"]库存为["+sl+"],不能销售！");
-							return false;
-						}
 					}
 					
 					//存储客户ID
