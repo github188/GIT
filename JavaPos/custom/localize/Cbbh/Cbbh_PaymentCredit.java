@@ -1,14 +1,10 @@
 package custom.localize.Cbbh;
 
-import java.io.BufferedReader;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.efuture.commonKit.CommonMethod;
 import com.efuture.commonKit.ManipulatePrecision;
 import com.efuture.commonKit.MessageBox;
 import com.efuture.javaPos.Communication.NetService;
-import com.efuture.javaPos.Global.GlobalVar;
 import com.efuture.javaPos.Global.SellType;
 import com.efuture.javaPos.Payment.Payment;
 import com.efuture.javaPos.Struct.SalePayDef;
@@ -43,9 +39,15 @@ public class Cbbh_PaymentCredit extends Payment {
 				return false;
 			}
 			
-			double credit = ((Cbbh_NetService)NetService.getDefault()).getCredit(saleBS.saleHead.cczz_zktmp.trim());
-			//减去已经付款金额
+			StringBuffer je = new StringBuffer(0);
+			if(!((Cbbh_NetService)NetService.getDefault()).getCredit(saleBS.saleHead.cczz_zktmp.trim(),je))
+			{
+				new MessageBox("调用SAP-WEBSERVICE查询[" +saleBS.saleHead.cczz_zktmp.trim() + "]的欠款额度出现错误,暂不能使用此付款方式！");
+				return false;
+			}
 			
+			double credit = Double.valueOf(je.toString()).doubleValue();
+			//减去已经付款金额
 			double credit_real = credit - calcPayAlreadyMoney();
 			if(Double.compare(credit_real, Double.valueOf(money).doubleValue()) > 0)
 			{

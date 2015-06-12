@@ -113,12 +113,14 @@ public class DT_ATP_CHECK_RESPWMDVEX  implements java.io.Serializable {
         elemField.setFieldName("COM_DATE");
         elemField.setXmlName(new javax.xml.namespace.QName("", "COM_DATE"));
         elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
+        elemField.setMinOccurs(0);
         elemField.setNillable(false);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("COM_QTY");
         elemField.setXmlName(new javax.xml.namespace.QName("", "COM_QTY"));
         elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
+        elemField.setMinOccurs(0);
         elemField.setNillable(false);
         typeDesc.addFieldDesc(elemField);
     }

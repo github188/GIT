@@ -6,7 +6,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Vector;
 
 import javax.xml.rpc.ServiceException;
@@ -67,8 +66,8 @@ public class Cbbh_NetService extends Cbbh_Crm_NetService//Bcrm_NetService
 			try {
 				while ((line = br.readLine()) != null) 
 				{
-					String[] row = line.split("=");
-					map.put(row[0].trim(), row[1].trim());					
+					String[] row = line.split("=",2);
+					if(row.length > 1) map.put(row[0].trim(), row[1].trim());					
 				}
 				return map;
 			} 
@@ -80,10 +79,10 @@ public class Cbbh_NetService extends Cbbh_Crm_NetService//Bcrm_NetService
 		}
 	 
 	 //获取家电开票的赊销金额-webservice
-	 public double getCredit(String id)
+	 public boolean getCredit(String id,StringBuffer je)
 	 {
 		 DT_CREDIT_INFO_REQ request = new DT_CREDIT_INFO_REQ(id);
-		 SI_CREDIT_INFO_OUT_SYNServiceLocator service =  new SI_CREDIT_INFO_OUT_SYNServiceLocator();
+		 SI_CREDIT_INFO_OUT_SYNServiceLocator service = new SI_CREDIT_INFO_OUT_SYNServiceLocator();
 		 
 		 HashMap<String,String> map =  getSapWebService();
 		 String url = null;
@@ -114,19 +113,27 @@ public class Cbbh_NetService extends Cbbh_Crm_NetService//Bcrm_NetService
 			call.setPassword(pwd);
 			
 			if(call != null) response = call.SI_CREDIT_INFO_OUT_SYN(request);
-			if(response != null) return Double.valueOf(response.getSKFOR()).doubleValue();
-			
-		} catch (Exception e) {
+			if(response != null) 
+			{	
+				je.setLength(0);
+				je.append(response.getSKFOR());
+				return true;
+			}
+		} catch (ServiceException e) {
 			// TODO Auto-generated catch block
+			e.printStackTrace();
 			PosLog.getLog(getClass()).error(e);
-			new MessageBox("连接SAP-WEBSERVICE出现异常");
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			PosLog.getLog(getClass()).error(e);
 		}
 		 
-		 return 0;
+		return false;
 	 }
 	 
 	 //获取家电开票商品的库存-webservice
-	 public double getCommodStock(SaleGoodsDef good,String mkt,String depot)
+	 public boolean getCommodStock(SaleGoodsDef good,String mkt,String depot,StringBuffer je)
 	 {
 		 HashMap<String,String> map =  getSapWebService();
 		 String url = null;
@@ -143,17 +150,16 @@ public class Cbbh_NetService extends Cbbh_Crm_NetService//Bcrm_NetService
 		 DT_ATP_CHECK_REQ request = new DT_ATP_CHECK_REQ();
 		 
 		 request.setMATERIAL(good.code); //code
-		 request.setPLANT(GlobalInfo.sysPara.mktcode);//mkt
+		 request.setPLANT(mkt);//mkt
 		 request.setUNIT(good.unit);//unit
 		 request.setSTGE_LOC(depot);//库存地点
-		 
-		 /*	
+		 /*
 		 request.setMATERIAL("84000003002"); //code
 		 request.setPLANT("3002");//mkt
 		 request.setUNIT("EA");//unit
 		 request.setSTGE_LOC("0001");//库存地点
 		 */
-		 SI_ATP_CHECK_OUT_SYNServiceLocator service =  new SI_ATP_CHECK_OUT_SYNServiceLocator();
+		 SI_ATP_CHECK_OUT_SYNServiceLocator service = new SI_ATP_CHECK_OUT_SYNServiceLocator();
 		 
 		 if(!CommonMethod.isNull(url)) 
 			 service.setHTTP_PortEndpointAddress(url);
@@ -180,17 +186,26 @@ public class Cbbh_NetService extends Cbbh_Crm_NetService//Bcrm_NetService
 				String date = null;
 				date = (new SimpleDateFormat("yyyy-MM-dd")).format(new Date());
 				for(DT_ATP_CHECK_RESPWMDVEX item : response)
+				{	
 					if(item.getCOM_DATE().equals(date))
-						return Double.valueOf(item.getCOM_QTY()).doubleValue();
+					{ 
+						je.setLength(0);
+						je.append(item.getCOM_QTY());
+						return true;
+					}
+				}
 			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
+		} catch (ServiceException e) {
+				// TODO Auto-generated catch block
 			e.printStackTrace();
 			PosLog.getLog(getClass()).error(e);
-			new MessageBox("连接SAP-WEBSERVICE出现异常");
+		} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+			e.printStackTrace();
+			PosLog.getLog(getClass()).error(e);
 		}
 		 
-		 return 0;
+		 return false;
 	 }
 	
 	 public boolean findWCCRules(String billno,Vector wccrules)

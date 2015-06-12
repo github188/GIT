@@ -4226,6 +4226,8 @@ public class Cbbh_SaleBS extends Cbbh_THHNew_SaleBS//Cbbh_THH_SaleBS
 	//获取开票单
 	private boolean getSaleGoodsBill(String code,String saletype)
 	{
+		StringBuffer sl = new StringBuffer("0");
+		
 		try{
 			
 			addSalePay = new Vector();
@@ -4293,10 +4295,15 @@ public class Cbbh_SaleBS extends Cbbh_THHNew_SaleBS//Cbbh_THH_SaleBS
 					//判断库存
 					if(SellType.ISSALE(saletype))
 					{
-						double sl = 0;
-						sl = ((Cbbh_NetService)NetService.getDefault()).getCommodStock(sgd, GlobalInfo.sysPara.mktcode, cpd.str1);
+						sl.setLength(0);
+						sl.append("0");
+						if(!((Cbbh_NetService)NetService.getDefault()).getCommodStock(sgd, cpd.str1,GlobalInfo.sysPara.mktcode,sl))
+						{
+							new MessageBox("调用SAP-WEBSERVICE查询当前商品库存出现错误,暂不能使用此功能！");
+							return false;
+						}
 						
-						if(sl < sgd.sl)
+						if(Double.valueOf((sl.toString())).doubleValue() < sgd.sl)
 						{
 							new MessageBox("商品["+sgd.code+"]在["+cpd.str1+"]库存为["+sl+"],不能销售！");
 							return false;
@@ -4329,6 +4336,7 @@ public class Cbbh_SaleBS extends Cbbh_THHNew_SaleBS//Cbbh_THH_SaleBS
 					
 					//存储客户ID
 					saleHead.cczz_zktmp = cpd.str2;
+					//saleHead.cczz_zktmp = "32";
 				}
 				
 				if(shopcardzk > 0)

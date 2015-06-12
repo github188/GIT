@@ -7,23 +7,9 @@
 
 package custom.localize.Cbbh;
 
-import java.io.BufferedReader;
-import java.rmi.RemoteException;
-import java.util.HashMap;
-
-import javax.xml.rpc.ServiceException;
-
-import com.efuture.commonKit.CommonMethod;
-import com.efuture.javaPos.Global.GlobalVar;
-
 public class SI_CREDIT_INFO_OUT_SYNServiceLocator extends org.apache.axis.client.Service implements custom.localize.Cbbh.SI_CREDIT_INFO_OUT_SYNService {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = -2723432027902502858L;
-
-	public SI_CREDIT_INFO_OUT_SYNServiceLocator() {
+    public SI_CREDIT_INFO_OUT_SYNServiceLocator() {
     }
 
 
@@ -36,7 +22,7 @@ public class SI_CREDIT_INFO_OUT_SYNServiceLocator extends org.apache.axis.client
     }
 
     // Use to get a proxy class for HTTPS_Port
-    private java.lang.String HTTPS_Port_address = "https://192.1.33.41:50001/XISOAPAdapter/MessageServlet?senderParty=&senderService=EFUT&receiverParty=&receiverService=&interface=SI_CREDIT_INFO_OUT_SYN&interfaceNamespace=urn%3Acb%3Aefut%3Acredit_limit_info_in";
+    private java.lang.String HTTPS_Port_address = "https://192.1.33.46:8110/XISOAPAdapter/MessageServlet?senderParty=&senderService=EFUT&receiverParty=&receiverService=&interface=SI_CREDIT_INFO_OUT_SYN&interfaceNamespace=urn%3Acb%3Aefut%3Acredit_limit_info_in";
 
     public java.lang.String getHTTPS_PortAddress() {
         return HTTPS_Port_address;
@@ -81,7 +67,7 @@ public class SI_CREDIT_INFO_OUT_SYNServiceLocator extends org.apache.axis.client
 
 
     // Use to get a proxy class for HTTP_Port
-    private java.lang.String HTTP_Port_address = "http://192.1.33.41:50000/XISOAPAdapter/MessageServlet?senderParty=&senderService=EFUT&receiverParty=&receiverService=&interface=SI_CREDIT_INFO_OUT_SYN&interfaceNamespace=urn%3Acb%3Aefut%3Acredit_limit_info_in";
+    private java.lang.String HTTP_Port_address = "http://192.1.33.46:8110/XISOAPAdapter/MessageServlet?senderParty=&senderService=EFUT&receiverParty=&receiverService=&interface=SI_CREDIT_INFO_OUT_SYN&interfaceNamespace=urn%3Acb%3Aefut%3Acredit_limit_info_in";
 
     public java.lang.String getHTTP_PortAddress() {
         return HTTP_Port_address;
@@ -212,74 +198,5 @@ if ("HTTP_Port".equals(portName)) {
     public void setEndpointAddress(javax.xml.namespace.QName portName, java.lang.String address) throws javax.xml.rpc.ServiceException {
         setEndpointAddress(portName.getLocalPart(), address);
     }
-    
-	public static void main(String[] args)
-	{
-		SI_CREDIT_INFO_OUT_SYNServiceLocator Service = new SI_CREDIT_INFO_OUT_SYNServiceLocator();
-		
-		 HashMap<String,String> map = Service.getSapWebService();
-		 String url = null;
-		 String user = null;
-		 String pwd = null;
-		 
-		 if(map != null) 
-		 {
-			 url = map.get("Stock_Url");
-		 	 user = map.get("Stock_User");
-		     pwd = map.get("Stock_Pwd");
-		 }
-		
-		 if(!CommonMethod.isNull(url)) 
-			 Service.setHTTP_PortEndpointAddress(url);
-		 
-		 if(CommonMethod.isNull(user) || CommonMethod.isNull(pwd))
-		 {
-			 user = "EFUT_USER";
-			 pwd = "123456";
-		 }
-		 
-		DT_CREDIT_INFO_REQ request = new DT_CREDIT_INFO_REQ();
-		request.setKUNNR("32");	//供应商
-		SI_CREDIT_INFO_OUT_SYNBindingStub Call = null;
-
-
-		DT_CREDIT_INFO_RESP response = null;
-		try {
-			Call = (SI_CREDIT_INFO_OUT_SYNBindingStub)Service.getHTTP_Port();
-			Call.setUsername(user);
-			Call.setPassword(pwd);
-			response = Call.SI_CREDIT_INFO_OUT_SYN(request);
-			System.out.println(response.getSKFOR());
-		} catch (ServiceException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	 public HashMap<String,String> getSapWebService() {
-			BufferedReader br = null;
-			String configName = "D:/javapos/javapos.configfile/CbbhWebService.ini";
-			String line = null;
-			br = CommonMethod.readFile(configName);
-			
-			HashMap<String, String> map = new HashMap<String,String>();
-
-			try {
-				while ((line = br.readLine()) != null) 
-				{
-					String[] row = line.split("=");
-					map.put(row[0].trim(), row[1].trim());					
-				}
-				return map;
-			} 
-			catch (Exception e) 
-			{
-				e.printStackTrace();
-			}
-			return null;
-		}
 
 }
