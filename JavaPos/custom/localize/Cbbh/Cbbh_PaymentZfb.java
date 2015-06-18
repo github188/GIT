@@ -199,7 +199,7 @@ public class Cbbh_PaymentZfb extends Bcrm_PaymentMzk {
 			}
 
 			// 记录面值卡交易日志
-			 bld = mzkAccountLog(false, null, mzkreq, mzkret);
+			// bld = mzkAccountLog(false, null, mzkreq, mzkret);
 
 			/*
 			 * mzkreq.type = "PAY"; mzkreq.seqno =
@@ -583,7 +583,7 @@ public class Cbbh_PaymentZfb extends Bcrm_PaymentMzk {
 							else if (xmldata1[1].equals("RETRULE") && req.type.equals("PAY"))
 							{
 								//删除当前的"PAY"冲正
-								deleteMzkCz();
+								//deleteMzkCz();
 								
 								if(splits[1].toString().length() > 0)
 								{

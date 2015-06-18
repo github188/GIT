@@ -26,7 +26,7 @@ public class Cbbh_CustomLocalize extends Bcrm_CustomLocalize
 
 	public String getAssemblyVersion()
     {
-        return "1.7.101 build 150612.01";
+        return "1.7.101 build 150618.01";
     }
 	
 	public AccessDayDB createAccessDayDB()
