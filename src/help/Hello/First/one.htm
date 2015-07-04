@@ -1,0 +1,13 @@
+<h2>j2sdk1.4.2的安装及其配置</h2>
+<ul>
+  <li>安装：j2sdk1.4.2的安装很简单，直接运行其安装文件，一路’Next’即可。其中要注意的是，在选择安装路径的时候尽量在硬盘的根目录下安装，如：C:\ 
+    ，因为这样做可以省却后面配置JAVA_HOME和PATH路径的麻烦。一般来说可以把JDK安装在C:\下面，如：C:\j2sdk1.4.2； 
+  <li> 配置：这里主要配置两个路径，一个是JAVA_HOME，另一个是PATH，其中JAVA_HOME= C:\j2sdk1.4.2，PATH= C:\j2sdk1.4.2\bin，由于在pos机上不需要进行开发，所以不用配置CLASSPATH。
+</ul>
+<H2>	jakarta-tomcat-5.0.19的安装及其配置</H2>
+<ul>
+  <li>安装：其实tomcat的所谓安装就是把tomcat压缩文件解压到用户希望安装的地方，这里以安装在D:\为例，将压缩文件解压至D:\，如：D:\ 
+    jakarta-tomcat-5.0.19。 
+  <li>配置：在早期的tomcat版本中需要配置TOMCAT_HOME和CATALINA_HOME，而本系统所使用的TOMCAT版本没有必要配置这些信息，使得tomcat的安装配置变得如此简单。但是，还是需要配置两个xml文件（web.xml,server.xml）。关于这两个xml的存放地址见“pos机的安装”－EJB组件的部署；关于这个文件的配置方法参见“pos机的安装”－server.xml;web.xml;mssql-ds.xmljpos.xml;pos.ini的配置部分。
+</ul>
+<H2>&nbsp; </H2>

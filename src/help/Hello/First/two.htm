@@ -1,0 +1,130 @@
+ <ul>
+  <li>解压pos机安装包<br>
+    pos应用程序解压到用户目录，这里主要关注文件及目录如下：\lib ，server.xml，web.xml，pos.ini，jpos.xml，loader.jar，posv41.jar，当然不要忘了run.bat这个批处理文件，没有它整个程序的运行将很复杂。 
+    <br>
+  <li> Servlet及其他web程序的部署 <br>
+    本系统的Servlet及其他web程序主要用来实现pos机与后台信息数据库的实时交互功能。如上，把两个jar包－posv41.jar和loader.jar 
+    拷贝到tomcat的安装目录，D:\jakarta-tomcat-5.0.19\webapps\pos41\WEB-INF\lib 如果在webapps下面没有pos41目录则创建pos41目录，在pos41目录下面创建WEB-INF\lib目录。注意：创建的目录的名称一定要和所说的一致，否则很有可能出错。 
+    把web.xml文件copy到WEB-INF\目录下。 把server.xml文件copy到D:\ jakarta-tomcat-5.0.19\conf目录下。 
+    Servlet及其他web程序的部署就此实现。 
+  <li> Client程序的部署<br>
+    其实Client程序的部署十分简单，也就是前面解压的一系列文件，但是要涉及到两个文件的配置（pos.ini和jpos.xml），两个文件的配置方法可以参看下一小节。可以把前面步骤中用到的一系列jar包和xml文件作删除工作，但是建议不要删除这些jar包和文件。 
+  <li> Server.xml的配置<br>
+    对于server.xml的配置，本系统暂时用到其中的两个功能，首先是设置服务器的端口，在server.xml文档中找到下面的信息，本系统用9090作为其端口，用户也可以用其他数据，如80等，只要不和物理机上的其他服务造成端口冲突就OK。<br>
+    &lt;!-- Define a non-SSL Coyote HTTP/1.1 Connector on port 9090 --&gt;<br>
+    &lt;Connector port=&quot;9090&quot;<br>
+    maxThreads=&quot;150&quot; minSpareThreads=&quot;25&quot; maxSpareThreads=&quot;75&quot;<br>
+    enableLookups=&quot;false&quot; redirectPort=&quot;8443&quot; acceptCount=&quot;100&quot;<br>
+    debug=&quot;0&quot; connectionTimeout=&quot;20000&quot; <br>
+    disableUploadTimeout=&quot;true&quot; /&gt;<br>
+    &lt;!-- Note : To disable connection timeouts, set connectionTimeout value 
+    to 0 --&gt;<br>
+    &lt;!-- Note : To use gzip compression you could set the following properties 
+    : <br>
+    compression=&quot;on&quot; <br>
+    compressionMinSize=&quot;2048&quot; <br>
+    noCompressionUserAgents=&quot;gozilla, traviata&quot; <br>
+    compressableMimeType=&quot;text/html,text/xml&quot; --&gt;<br>
+    <br>
+    其次，设置数据源信息的配置，在server.xml文件中找到上下文环境设置也即&lt;Context&gt;。在context标签中配置path和docBase属性，它们标明应用程序的根。 
+    <p>找到&lt;Resource name=&quot;dbpos&quot; auth=&quot;Container&quot; type=&quot;javax.sql.DataSource&quot;/&gt;标签，其中配置了数据源的相关信息，其中属性name标明数据源的名称，外部文件就是通过这个名称来找到数据源。</p>
+    <p>找到&lt;ResourceParams name=&quot;dbpos&quot;&gt;标签，其中包含这个数据源的相关名称及其值的信息，包括用户名，密码，JDBC驱动，数据的url（包括数据库地址和名称等）。</p>
+    <p>用户可以根据自己的情况对这些数据源信息作相应的配置，这些配置不会影响到POS机的运行情况（前提是正确的配置相关参数?）。下面是文件的相关片断。<br>
+      &lt;Context path=&quot;/pos41&quot; docBase=&quot;pos41&quot;<br>
+      debug=&quot;5&quot; reloadable=&quot;true&quot; crossContext=&quot;true&quot;&gt;<br>
+      。。。。。。。。。。。。。。。。<br>
+      &lt;Resource name=&quot;dbpos&quot; auth=&quot;Container&quot; type=&quot;javax.sql.DataSource&quot;/&gt;<br>
+      &lt;ResourceParams name=&quot;dbpos&quot;&gt;<br>
+      。。。。。。。。。。。。。。。。<br>
+      &lt;!-- dB username and password for dbpos connections --&gt;<br>
+      &lt;parameter&gt;<br>
+      &lt;name&gt;username&lt;/name&gt;<br>
+      &lt;value&gt;sa&lt;/value&gt;<br>
+      &lt;/parameter&gt;<br>
+      &lt;parameter&gt;<br>
+      &lt;name&gt;password&lt;/name&gt;<br>
+      &lt;value&gt;sa&lt;/value&gt;<br>
+      &lt;/parameter&gt; <br>
+      &lt;!-- Class name for dbpos JDBC driver --&gt;<br>
+      &lt;parameter&gt;<br>
+      &lt;name&gt;driverClassName&lt;/name&gt;<br>
+      &lt;value&gt;com.microsoft.jdbc.sqlserver.SQLServerDriver&lt;/value&gt;<br>
+      &lt;/parameter&gt;<br>
+      &lt;!-- The JDBC connection url for connecting to your MsSQL dB.<br>
+      The autoReconnect=true argument to the url makes sure that the<br>
+      mm.mysql JDBC Driver will automatically reconnect if mysqld closed the<br>
+      connection. mysqld by default closes idle connections after 8 hours.<br>
+      --&gt;<br>
+      &lt;parameter&gt;<br>
+      &lt;name&gt;url&lt;/name&gt; &lt;value&gt;jdbc:microsoft:sqlserver://127.0.0.1:1433;SelectMethod=Cursor;databasename=MyShopPOS;&lt;/value&gt;<br>
+      &lt;/parameter&gt;<br>
+      &lt;/ResourceParams&gt;<br>
+      。。。。。。。。。。。。。。。。。。。。。。。。<br>
+      &lt;/Context&gt;</p>
+  <li> Web.xml的配置<br>
+    Web.xml主要配置了两个功能，一是数据源信息，二是Servlet信息。其中Servlet信息对于用户来说应该是透明的，也即不让用户进行修改。但是可以根据情况对数据源信息作相关的变化。这里的数据源信息主要是引用前面在Server.xml文件中配置的数据源。因此这里的名称一定要和server.xml文件中的名称一致。也就是和&lt;Resource 
+    name=&quot;dbpos&quot; auth=&quot;Container&quot; type=&quot;javax.sql.DataSource&quot;/&gt;里面name属性和type属性一致。<br>
+    &lt;!--data source--&gt; <br>
+    &lt;resource-ref&gt;<br>
+    &lt;description&gt;DataSource Reference&lt;/description&gt;<br>
+    &lt;res-ref-name&gt;dbpos&lt;/res-ref-name&gt;<br>
+    &lt;res-type&gt;javax.sql.DataSource&lt;/res-type&gt;<br>
+    &lt;res-auth&gt;Container&lt;/res-auth&gt;<br>
+    &lt;/resource-ref&gt; 
+  <li> jpos.xml的配置<br>
+    jpos.xml文件配置了pos机的硬件参数：打印机参数、钱箱参数、客显参数和扫描仪参数。下面分别以某一种设备为例讲述参数配置。<br>
+    1． 打印机参数配置<br>
+    根据打印机的型号在jpos.xml中选择相应的打印机，如果要启动这种打印机需要更改设置，在&lt;JposEntry logicalName=&quot;ROYALSTONE_PRINTER_WINCOR&quot;&gt;中改为logicalName=&quot;POSPrinter&quot;。 
+    <p>根据实际接线情况将&lt;prop name=&quot;portName&quot; value=&quot;COM1&quot;/&gt;中的value值设为相应的COM口。只需要配置这两个参数即可。<br>
+      &lt;!--ROYALSTONE_PRINTER_WINCOR--&gt;&lt;!--POSPrinter--&gt;<br>
+      &lt;JposEntry logicalName=&quot;ROYALSTONE_PRINTER_WINCOR&quot;&gt;<br>
+      。。。。。。。。。<br>
+      &lt;product description=&quot;Printer&quot; name=&quot;Royalstone software 
+      Inc. Services for JavaPOS(TM) Standard&quot; url=&quot;http://www.royalstone.cn&quot;/&gt;<br>
+      &lt;prop name=&quot;portName&quot; value=&quot;COM1&quot;/&gt;<br>
+      。。。。。。。。。<br>
+      &lt;prop name=&quot;driverName&quot; value=&quot;drv/RSPrinter41_TM_U210&quot;/&gt; 
+      <br>
+      &lt;/JposEntry&gt;<br>
+      2． 钱箱参数的配置<br>
+      根据钱箱的型号在jpos.xml中选择相应的钱箱，如果要启动这种钱箱需要更改设置，在&lt;JposEntry logicalName=&quot;ROYALSTONE_CASHDRAWER_WINCOR&quot;&gt;中改为logicalName=&quot;POSCashDrawer&quot;。根据情况定夺COM口。<br>
+      <br>
+      3． 客显参数的配置<br>
+      根据客显的型号在jpos.xml中选择相应的，如果要启动这种客显需要更改设置，在&lt;JposEntry logicalName=&quot;ROYALSTONE_CustDisplay_WINCOR&quot;&gt;中改为logicalName=&quot;POSCustDisplay&quot;。</p>
+    <p>根据实际接线情况将&lt;prop name=&quot;portName&quot; value=&quot;COM4&quot;/&gt;中的value值设为相应的COM口。只需要配置这两个参数即可。</p>
+    <p>&lt;JposEntry logicalName=&quot;ROYALSTONE_CustDisplay_WINCOR&quot;&gt;<br>
+      &lt;creation factoryClass=&quot;com.royalstone.pos.services.factories.RSServiceInstanceFactory&quot; 
+      <br>
+      serviceClass=&quot;com.royalstone.pos.services.CustDisplay&quot;/&gt;<br>
+      &lt;vendor name=&quot;Royalstone software Inc.&quot; url=&quot;http://www.royalstone.cn&quot;/&gt;<br>
+      &lt;jpos category=&quot;LineDisplay&quot; version=&quot;1.4&quot;/&gt;<br>
+      &lt;product description=&quot;LineDisplay&quot; name=&quot;Royalstone software 
+      Inc. Services for JavaPOS(TM) Standard&quot; url=&quot;http://www.royalstone.cn&quot;/&gt;<br>
+      &lt;prop name=&quot;portName&quot; value=&quot;COM4&quot;/&gt;<br>
+      。。。。。。。。。<br>
+      &lt;prop name=&quot;driverName&quot; value=&quot;drv/RSVFD41_BA63G&quot;/&gt; 
+      <br>
+      &lt;/JposEntry&gt;<br>
+      4． 扫描仪参数的配置<br>
+      根据扫描仪的型号在jpos.xml中选择相应的，如果要启动这种扫描仪需要更改设置，在&lt;JposEntry logicalName=&quot;ROYALSTONE_Scanner_WINCOR&quot;&gt;中改为logicalName=&quot;POSScanner&quot;。</p>
+    <p>根据实际接线情况将&lt;prop name=&quot;portName&quot; value=&quot;COM2&quot;/&gt;中的value值设为相应的COM口。只需要配置这两个参数即可。<br>
+      &lt;JposEntry logicalName=&quot;ROYALSTONE_SCANNER_WINCOR&quot;&gt;<br>
+      。。。。。。。。。<br>
+      &lt;prop name=&quot;queuingMode&quot; value=&quot;on&quot;/&gt;<br>
+      &lt;prop name=&quot;scannerMode&quot; value=&quot;A&quot;/&gt;<br>
+      &lt;prop name=&quot;port&quot; value=&quot;COM2&quot;/&gt;<br>
+      。。。。。。。。。 <br>
+      &lt;/JposEntry&gt;</p>
+  <li> 
+    <p>pos.ini的配置<br>
+      pos.ini的配置十分简单，只需要配置4个参数：POS机号－posid；服务器地址－server；服务器端口－port以及店号－storeid。客户可以根据实际情况对这些参数进行设置。</p>
+  <li> 
+    <p>注意事项：<br>
+      1、在启动pos机之前一定要先启动数据库服务器－SQLServer、Tomcat服务器。启动这些服务器可能需要一段时间，尤其当机器的性能配置比较低的时候更是如此，因此请耐心等待这些服务器全部启动。<br>
+      2、如果出现pos机启动不正常的话可以试着删除Client端的Context.dat和一系列的sheet#文件（sheet#0,sheet#1,sheet#2,sheet#3…）。<br>
+      <br>
+    </p>
+    <br>
+    <br>
+</ul>
+

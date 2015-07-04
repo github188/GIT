@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='ISO-8859-1' ?>
+<!DOCTYPE map
+  PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp Map Version 1.0//EN"
+         "http://java.sun.com/products/javahelp/map_1_0.dtd">
+
+<map version="1.0">
+  <mapID target="overview" url="Hello/overview.htm" />
+  <mapID target="one" url="Hello/First/one.htm" />
+  <mapID target="two" url="Hello/First/two.htm" />
+  <mapID target="three" url="Hello/Last/three.htm" />
+  <mapID target="four" url="Hello/Last/four.htm" />
+  <mapID target="five" url="Hello/Last/five.htm" />
+  <mapID target="six" url="Hello/Last/six.htm" />
+  <mapID target="seven" url="Hello/Last/seven.htm" />
+  <mapID target="eight" url="Hello/Last/eight.htm" />
+  <mapID target="nine" url="Hello/Last/nine.htm" />
+  <mapID target="ten" url="Hello/Last/ten.htm" />
+  <mapID target="eleven" url="Hello/Last/eleven.htm" />
+</map>

@@ -1,0 +1,59 @@
+[PropertyInfo]
+atferTenderAmount,String,false,false, , ,true,<default>
+borderLayout1,BorderLayout,false,false, , ,false,<default>
+borderLayout10,BorderLayout,false,false, , ,false,<default>
+borderLayout11,BorderLayout,false,false, , ,false,<default>
+borderLayout2,BorderLayout,false,false, , ,false,<default>
+borderLayout3,BorderLayout,false,false, , ,false,<default>
+borderLayout4,BorderLayout,false,false, , ,false,<default>
+borderLayout5,BorderLayout,false,false, , ,false,<default>
+borderLayout6,BorderLayout,false,false, , ,false,<default>
+borderLayout7,BorderLayout,false,false, , ,false,<default>
+borderLayout9,BorderLayout,false,false, , ,false,<default>
+btnCanel,JButton,false,false, , ,false,<default>
+btnEnter,JButton,false,false, , ,false,<default>
+cardAmount,String,false,false, , ,true,<default>
+cardNo,String,false,false, , ,true,<default>
+carID,String,false,false, , ,true,<default>
+confirm,boolean,false,false, , ,true,<default>
+custName,String,false,false, , ,true,<default>
+gridLayout2,GridLayout,false,false, , ,false,<default>
+isConfirm,boolean,false,false, , ,false,<default>
+jLabel1,JLabel,false,false, , ,false,<default>
+jLabel2,JLabel,false,false, , ,false,<default>
+jLabel3,JLabel,false,false, , ,false,<default>
+jLabel4,JLabel,false,false, , ,false,<default>
+jLabel5,JLabel,false,false, , ,false,<default>
+jLabel6,JLabel,false,false, , ,false,<default>
+jLabel7,JLabel,false,false, , ,false,<default>
+jPanel1,JPanel,false,false, , ,false,<default>
+jPanel10,JPanel,false,false, , ,false,<default>
+jPanel11,JPanel,false,false, , ,false,<default>
+jPanel12,JPanel,false,false, , ,false,<default>
+jPanel13,JPanel,false,false, , ,false,<default>
+jPanel14,JPanel,false,false, , ,false,<default>
+jPanel15,JPanel,false,false, , ,false,<default>
+jPanel17,JPanel,false,false, , ,false,<default>
+jPanel2,JPanel,false,false, , ,false,<default>
+jPanel3,JPanel,false,false, , ,false,<default>
+jPanel4,JPanel,false,false, , ,false,<default>
+jPanel5,JPanel,false,false, , ,false,<default>
+jPanel6,JPanel,false,false, , ,false,<default>
+jPanel7,JPanel,false,false, , ,false,<default>
+jPanel8,JPanel,false,false, , ,false,<default>
+jPanel9,JPanel,false,false, , ,false,<default>
+jTextField1,JTextField,false,false, , ,false,<default>
+keyListener,PosKeyboard,false,false, , ,false,<default>
+tenderAmount,String,false,false, , ,true,<default>
+txtAtferTender,JTextField,false,false, , ,false,<default>
+txtBalance,JTextField,false,false, , ,false,<default>
+txtCardNo,JTextField,false,false, , ,false,<default>
+txtCardType,JTextField,false,false, , ,false,<default>
+txtCustName,JTextField,false,false, , ,false,<default>
+txtTender,JTextField,false,false, , ,false,<default>
+verticalFlowLayout1,VerticalFlowLayout,false,false, , ,false,<default>
+[IconNames]
+
+
+
+

@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='GBK' ?>
+<!DOCTYPE index
+  PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp Index Version 1.0//EN"
+         "http://java.sun.com/products/javahelp/index_1_0.dtd">
+
+<index version="1.0">
+  <indexitem text="POS系统安装说明">
+    <indexitem target="one" text="POS服务器环境构建"/>
+    <indexitem target="two" text="POS系统的安装"/>
+  </indexitem>
+  <indexitem text="POS系统操作手册">
+    <indexitem target="three" text="基础知识"/>
+    <indexitem target="four" text="日常操作"/>
+    <indexitem target="five" text="销售"/>
+    <indexitem target="six" text="结算收银"/>
+    <indexitem target="seven" text="退货"/>
+    <indexitem target="eight" text="出入款"/>
+    <indexitem target="nine" text="其他功能"/>
+    <indexitem target="ten" text="手工折扣"/>
+    <indexitem target="eleven" text="班结"/>
+  </indexitem>
+  <indexitem target="overview" text="Overview"/>
+</index>
+
+

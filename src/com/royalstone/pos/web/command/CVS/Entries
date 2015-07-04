@@ -1,0 +1,30 @@
+/AlterPinCommand.java/1.1/Tue Aug 16 08:51:06 2005//
+/BulkpriceCommand.java/1.1/Wed Oct 13 08:21:58 2004//
+/ClerkCommand.java/1.1/Tue Aug 16 08:51:06 2005//
+/CloseWorkCommand.java/1.1/Thu Jun 24 06:49:22 2004//
+/CompleteUpdateCommand.java/1.1/Mon Oct  4 10:22:52 2004//
+/DiscountCommand.java/1.1/Thu Aug 18 10:01:50 2005//
+/FavorCommand.java/1.1/Thu Jun 24 06:49:22 2004//
+/GetUpdateListCommand.java/1.1/Mon Oct  4 07:29:46 2004//
+/ICommand.java/1.1/Mon Oct  4 07:29:46 2004//
+/LoanCardAutoReverCommand.java/1.1/Tue Aug 16 08:51:06 2005//
+/LoanCardPayCommand.java/1.1/Tue Aug 16 08:51:06 2005//
+/LoanCardQueryCommand.java/1.1/Tue Aug 16 08:51:04 2005//
+/LogoffCommand.java/1.1/Tue Aug 16 08:51:06 2005//
+/LogonCommand.java/1.1/Sat Jun 26 13:45:36 2004//
+/MemberCardQueryCommand.java/1.1/Tue Jun 27 05:21:54 2006//
+/MemberCardQueryTransfer.java/1.1/Fri Nov 10 03:56:26 2006//
+/MemberCardUpdateServletCommand.java/1.1/dummy timestamp//
+/MemberCardUpdateTransfer.java/1.1/Tue Aug 16 08:51:04 2005//
+/OperatorCommand.java/1.1/Thu Jan 12 02:09:26 2006//
+/PosJournalCommand.java/1.1/Tue Aug 16 08:51:06 2005//
+/PosLogCommand.java/1.1/Tue Aug 16 08:51:08 2005//
+/PriceCommand.java/1.1/Mon Oct 18 08:50:32 2004//
+/SHCardAutoReverServletCommand.java/1.1/Thu Oct 12 08:27:26 2006//
+/SHCardAutoReverTransfer.java/1.1/Tue Aug 16 08:51:06 2005//
+/SHCardPayServletCommand.java/1.1/Thu Oct 12 08:28:22 2006//
+/SHCardPayTransfer.java/1.1/Tue Aug 16 08:51:06 2005//
+/SHCardQueryServletCommand.java/1.1/Thu Oct 12 08:27:50 2006//
+/SHCardQueryTransfer.java/1.1/Tue Aug 16 08:51:04 2005//
+/TimeCommand.java/1.1/Mon Jun  7 06:24:58 2004//
+D/realtime////
