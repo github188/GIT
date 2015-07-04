@@ -301,15 +301,21 @@ public class PosDevIn {
 			}
 			else if(keyFunc(c) == PosFunction.PAY)
 			{
-				SalePayForm salepay = new SalePayForm(Double.valueOf(new Value(pos.core.getPosSheet().getValue().getValueUnPaid()).toString()));
-				salepay.setVisible(true);
-				if (salepay.isConfirm()) {
-					return new PosInputPayment(
-							(int) Math.rint(salepay.getInputMoney() * payment_base),
-							salepay.getPaycode().charAt(0));
-				} else {
-					return new PosInput(PosFunction.CANCEL);
+				if(pos.core.getPosSheet().getValue().getValueUnPaid() > 0)
+				{
+					SalePayForm salepay = new SalePayForm(pos.core.getPosSheet().getValue().getValueUnPaid() / payment_base);
+					salepay.setVisible(true);
+					if (salepay.isConfirm()) {
+						return new PosInputPayment(
+								(int) Math.rint(salepay.getInputMoney() * payment_base),
+								salepay.getPaycode().charAt(0));
+					} else {
+						return new PosInput(PosFunction.CANCEL);
+					}
 				}
+				else
+					return cancelInput("无效操作,按清除键继续!");
+
 			}else if (keyFunc(c) == PosFunction.CASH) {
 
 				TenderDialog tenderDialog = null;

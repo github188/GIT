@@ -90,7 +90,7 @@ public class SalePayForm extends JDialog {
 			data.add(pm.getPayname());
 		}*/
 		
-		//setTableData(pos.core.payModeList.getPaymode_lst());
+		setTableData(pos.core.payModeList.getPaymode_lst());
 	}
 
 	private void drawUI() {
@@ -573,7 +573,7 @@ public class SalePayForm extends JDialog {
 		if(this.isConfirm)
 		{
 			//输入金额大于默认金额
-			if(Double.compare(Double.valueOf(buffer).doubleValue(),money) >= 0)
+			if(Double.compare(Double.valueOf(buffer).doubleValue(),money) > 0)
 			{
 				//找零
 				if(pos.core.payModeList.payModeISZL(row))

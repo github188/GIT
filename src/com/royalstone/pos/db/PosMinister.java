@@ -500,7 +500,7 @@ public class PosMinister {
 		try {
 			PreparedStatement pstmt =
 				connection.prepareStatement(
-					" SELECT pmcode, pmname, sperate, chargeflag FROM clerk_lst;");
+					" SELECT pmcode, pmname, sperate, chargeflag FROM paymode;");
 
 			ResultSet rs = pstmt.executeQuery();
 			while (rs.next()) {

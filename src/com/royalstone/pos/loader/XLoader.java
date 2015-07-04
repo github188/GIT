@@ -304,7 +304,7 @@ public class XLoader {
 			String url = "http://" + host + ":" + port + "/pos41/PayMode";
 			loadXMLDoc(file, url);
 		}else{
-			new PayModeLoader().download2Xml(new FileOutputStream(file));
+			new PayModeLoader().download2Xml(file);
 		}
 	}
 

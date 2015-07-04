@@ -59,7 +59,7 @@ public class OperatorList implements Serializable
 		for( int i = 0; i < operator_lst.size(); i++ )
 		{
 			Operator op = (Operator) operator_lst.get(i);
-			//if( op.check( id, pin ) )
+			if( op.check( id, pin ) )
 				return op;
 		}
 

@@ -24,10 +24,9 @@ import com.royalstone.pos.web.util.DBConnection;
 
 public class PayModeLoader implements ICommand {
 	
-	public void download2Xml(OutputStream out) throws IOException {
+	public void download2Xml(String file) throws IOException {
 
 		Connection con = null;
-
 		try {
 			
 			con = DBConnection.getConnection("java:comp/env/dbpos");
@@ -36,12 +35,11 @@ public class PayModeLoader implements ICommand {
 				PayModeList list = PosMinister.getPayModeList(con);
 				XMLOutputter outputter = new XMLOutputter("  ", true, "GB2312");
 				outputter.setTextTrim(true);
-				outputter.output(new Document(list.toElement()), out);
+				FileOutputStream out = new FileOutputStream(file);
+				outputter.output(new Document(list.toElement()),out);
+				out.flush();
+				out.close();
 			}
-
-			out.flush();
-			out.close();
-
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw e;
@@ -51,7 +49,6 @@ public class PayModeLoader implements ICommand {
 		} finally {
 			DBConnection.closeAll(null, null, con);
 		}
-
 	}
 
 	public Object[] excute(Object[] values) {
@@ -88,7 +85,7 @@ public class PayModeLoader implements ICommand {
 	public static void main(String[] args) {
 		PayModeLoader pd = new PayModeLoader("172.16.7.163", 9090);
 		try {
-			new PayModeLoader().download2Xml(new FileOutputStream("paymode.NEW.xml"));
+			new PayModeLoader().download2Xml("paymode.NEW.xml");
 		} catch (IOException e) {
 			System.out.println("Failed!");
 			// e.printStackTrace();

@@ -53,10 +53,15 @@ public class PosSynchronizer {
 			
 			XLoader xloader = new XLoader(host, port);
             xloader.loadPosConfig("pos.NEW.xml", posid);
-             rename("pos.NEW.xml", "pos.xml", "pos.BAK.xml");
-          PosConfig config=PosConfig.getInstance();
+            rename("pos.NEW.xml", "pos.xml", "pos.BAK.xml");
+            
+            PosConfig config=PosConfig.getInstance();
             String isFast=config.getString("ISFASTLOAD");
             System.out.println("isFast:"+isFast);
+            
+            xloader.loadPayMode("promo/paymode.NEW.xml");
+            rename("promo/paymode.NEW.xml", "promo/paymode.xml", "promo/paymode.BAK.xml");
+
         //------------------------
         //--------------------------
           String ifSupportOffLine=PosConfig.getInstance().getString("IFSUPPORTOFFLINE");
@@ -103,7 +108,6 @@ public class PosSynchronizer {
              xloader.loadPriceCut("promo/pricecut.NEW.xml");
              xloader.loadPriceComb("promo/pricecomb.NEW.xml");
              xloader.loadCardType("promo/cardtype.NEW.xml");
-             xloader.loadPayMode("promo/paymode.NEW.xml");
              DiscountLoader discloader = new DiscountLoader(host, port);
     		 discloader.download("promo/discount.NEW.lst");
 			renameFiles();
@@ -113,7 +117,6 @@ public class PosSynchronizer {
              xloader.loadPriceCut("promo/pricecut.NEW.xml");
              xloader.loadPriceComb("promo/pricecomb.NEW.xml");
              xloader.loadCardType("promo/cardtype.NEW.xml");
-             xloader.loadPayMode("promo/paymode.NEW.xml");
              DiscountLoader discloader = new DiscountLoader(host, port);
     		 discloader.download("promo/discount.NEW.lst");
 			renameFiles();

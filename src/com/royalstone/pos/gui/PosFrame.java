@@ -362,7 +362,7 @@ public class PosFrame extends JFrame implements MainUI {
 
 		menus[1].add(help);
 
-		mi = new JMenuItem("关于 POS4.1");
+		mi = new JMenuItem("关于 POS4.1+");
 		mi.setFont(new java.awt.Font("Dialog", 0, 16));
 		menus[1].add(mi);
 		mi.addActionListener(new ActionListener() {

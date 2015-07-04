@@ -8,8 +8,11 @@ import java.sql.Statement;
 import java.util.HashMap;
 
 import javax.sql.DataSource;
+import javax.swing.JOptionPane;
 
 import org.apache.commons.dbcp.BasicDataSource;
+
+import com.royalstone.pos.util.DbConfig;
 
 /**
  * @author liangxinbiao
@@ -211,10 +214,37 @@ public class ConnectionFactoryDBCP implements IConnectionFactory {
 	public static void main(String[] args)
 	{
        try {
-            Class.forName("net.sourceforge.jtds.jdbc.Driver");
+            //Class.forName("net.sourceforge.jtds.jdbc.Driver");
             Connection con = null;
 
-			con = DriverManager.getConnection("jdbc:jtds:sqlserver://172.16.13.88:1433/mySHOPPOS40_jkyy","sa","sa");
+			//con = DriverManager.getConnection("jdbc:jtds:sqlserver://172.16.20.98:1433/mySHOPPOS40_jkyy","sa","sa");
+
+			ConnectionFactoryDBCP connectionFactoryDBCP =
+				new ConnectionFactoryDBCP();
+
+			DbConfig dbConfig = new DbConfig("db.ini");
+
+			try {
+
+				connectionFactoryDBCP.addConnection(
+					"java:comp/env/dbpos",
+					dbConfig.getDriver(),
+					dbConfig.getUrl(),
+					dbConfig.getUser(),
+					dbConfig.getPassword(),
+					dbConfig.getMaxActive(),
+					dbConfig.getMaxIdel(),
+					dbConfig.getMaxWaitTime());
+
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				JOptionPane.showMessageDialog(null, "连接不上主数据库！");
+				System.exit(1);
+			}
+			
+			DBConnection.setConnectionFactory(connectionFactoryDBCP);
+			
+			con = DBConnection.getConnection("java:comp/env/dbpos");
 	          
             Statement st = con.createStatement();            
             ResultSet rs = st.executeQuery("SELECT * FROM paymode");
