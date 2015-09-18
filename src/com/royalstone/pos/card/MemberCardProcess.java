@@ -95,7 +95,7 @@ public class MemberCardProcess {
         if(permitManualInput.equals("OFF")&&inputInterval>0){
              long realInputInterval=msrInput.getInputInterval();
              if(realInputInterval>inputInterval){
-                  exceptionInfo = "不允许手工输入卡号,请刷卡,请按清楚键继续!";
+                  exceptionInfo = "不允许手工输入卡号,请刷卡,请按清除键继续!";
 			     return null;
              }
         }

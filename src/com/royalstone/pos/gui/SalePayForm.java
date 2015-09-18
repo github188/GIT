@@ -1,10 +1,7 @@
 package com.royalstone.pos.gui;
 
 import com.royalstone.pos.common.PayMode;
-import com.royalstone.pos.common.PayModeList;
 import com.royalstone.pos.common.PosFunction;
-import com.royalstone.pos.core.PosCore;
-import com.royalstone.pos.io.PosInput;
 import com.royalstone.pos.io.PosKeyMap;
 import com.royalstone.pos.shell.pos;
 
@@ -15,8 +12,6 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -34,17 +29,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
-import javax.swing.SwingConstants;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
-
-import sun.swing.table.DefaultTableCellHeaderRenderer;
 
 public class SalePayForm extends JDialog {
+	
 	private static final long serialVersionUID = 1L;
 	private PayModeTableModel payModeTableModel = null;
 	private SalePayDetailTableModel salePayDetailTableModel = null;
@@ -104,11 +94,12 @@ public class SalePayForm extends JDialog {
 
 		this.posPayModeTable = new JTable(this.payModeTableModel);
 		//this.posPayModeTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		DefaultTableCellHeaderRenderer thr = new DefaultTableCellHeaderRenderer();
-		thr.setHorizontalAlignment(JLabel.RIGHT);
-		this.posPayModeTable.getTableHeader().setDefaultRenderer(thr);
+		//DefaultTableCellHeaderRenderer thr = new DefaultTableCellHeaderRenderer();
+		//thr.setHorizontalAlignment(JLabel.RIGHT);
+		//this.posPayModeTable.getTableHeader().setDefaultRenderer(thr);
 		this.posPayModeTable.getTableHeader().setFont(new Font("Dialog", 0, 30));
 		this.posPayModeTable.getTableHeader().setForeground(Color.RED);
+		this.posPayModeTable.getTableHeader().setAlignmentX(JTable.LEFT_ALIGNMENT);
 		this.posPayModeTable.getTableHeader().setPreferredSize(new Dimension(this.posPayModeTable.getTableHeader().getWidth(),50));
 		this.posPayModeTable.setFont(new Font("Dialog", 0, 20));
 		this.posPayModeTable.setRowHeight(30);
@@ -252,7 +243,7 @@ public class SalePayForm extends JDialog {
 		 */
 		private static final long serialVersionUID = 1L;
 		private ArrayList data = new ArrayList();
-		private String[] columnNames = {"Ó¦¸¶ " + money + "  "};
+		private String[] columnNames = {"´ýÊÕ " + money + "  "};
 
 		private PayModeTableModel() {
 		}

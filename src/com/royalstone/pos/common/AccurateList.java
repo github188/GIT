@@ -83,9 +83,10 @@ public class AccurateList {
         String precent="0";
 //		 String ifSupportOffLine=PosConfig.getInstance().getString("IFSUPPORTOFFLINE");
 
- //       if (PosContext.getInstance().isOnLine()&&"ON".equals(isRealTime)||"OFF".equals(ifSupportOffLine)) {
+        if (PosContext.getInstance().isOnLine ()) {
         	precent = RealTime.getInstance().findPrecentage(Integer.toString(cardLevelID),Integer.toString(deptID));
-//	    } else{
+	    }
+ //       else{
 //
 //        for(int i=0;i<this.accurateList.size();i++){
 //            Accurate acc=(Accurate)accurateList.get(i);

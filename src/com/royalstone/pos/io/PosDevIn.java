@@ -32,6 +32,7 @@ import com.royalstone.pos.favor.Discount;
 import com.royalstone.pos.gui.DialogInfo;
 import com.royalstone.pos.gui.DispPrice;
 import com.royalstone.pos.gui.GetBankCardType;
+import com.royalstone.pos.gui.InputForm;
 import com.royalstone.pos.gui.LoadoConfirm;
 import com.royalstone.pos.gui.Loadometer;
 import com.royalstone.pos.gui.MSRInput;
@@ -299,11 +300,33 @@ public class PosDevIn {
 				}
 
 			}
+			else if (keyFunc(c) == PosFunction.YYY)
+			{
+				String yyy = buffer.trim();
+				if (yyy.length() <= 0) 
+				{	
+					InputForm form = new InputForm("营业员","营业员","输入售卖商品的营业员!");
+					form.setVisible(true);
+					if(form.isConfirm()) 
+					{	
+						yyy = form.getResult();
+					}
+					else return cancelInput("无效操作,按清除键继续!");
+				}
+				
+				if(pos.core.yyyList.verifyYYY(yyy))
+				{
+					pos.core.setYyy(yyy);
+					PosDevOut.getInstance().dispWaiter("营业员:" + yyy);
+				}
+				else
+					return cancelInput("没有找到此营业员,按清除键继续!");
+			}
 			else if(keyFunc(c) == PosFunction.PAY)
 			{
 				if(pos.core.getPosSheet().getValue().getValueUnPaid() > 0)
 				{
-					SalePayForm salepay = new SalePayForm(pos.core.getPosSheet().getValue().getValueUnPaid() / payment_base);
+					SalePayForm salepay = new SalePayForm(pos.core.getPosSheet().getValue().getValueUnPaid() / (double)payment_base);
 					salepay.setVisible(true);
 					if (salepay.isConfirm()) {
 						return new PosInputPayment(
@@ -711,11 +734,11 @@ public class PosDevIn {
 						return cancelInput(scp.getExceptionInfo());
 					}
 				}
-				//				} else {
-				//					return cancelInput("储值卡不允许退货,按清除键继续!");
-				//				}
-
+//				} else {
+//					return cancelInput("储值卡不允许退货,按清除键继续!");
+//				}
 			}
+			
 			//TODO
 			else if (keyFunc(c) == PosFunction.CARDMEMBER) {
 				if (pos.core.getPosSheet().getSaleLen() == 0) {
@@ -782,6 +805,7 @@ public class PosDevIn {
 				//cashDrawer.open();
 
 			}
+			
 			/*else {
 				String code = getCode4Hotkey(c);
 			
@@ -793,6 +817,7 @@ public class PosDevIn {
 				else
 					return cancelInput("无效操作！");
 			}*/
+			
 			else {
 				Hotkey hot = getHotkey(c);
 				if (hot != null) {

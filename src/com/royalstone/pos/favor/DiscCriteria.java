@@ -35,7 +35,7 @@ public abstract class DiscCriteria implements Serializable {
 	public final static String DISC4DEPT = "d"; //整类折扣
     public final static String DISC4MEMBERDEPT = "M"; //会员整类折扣
 	public final static String BULKPRICE = "b"; //量贩折扣
-	public final static String DISCCOMPLEX = "x"; //组合促销
+	public final static String DISCCOMPLEX = "s"; //组合促销
 	public final static String DISCTIME = "t"; //时点折扣
 	public final static String DISC4MEMBER = "k"; //会员折扣
 	public final static String PROM4MEMBER = "h"; //会员价

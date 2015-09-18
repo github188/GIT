@@ -77,14 +77,20 @@ public class DispWaiter extends JDialog {
 		jPanel1.setLayout(borderLayout1);
 		jPanel2.setMinimumSize(new Dimension(50, 10));
 		jPanel2.setPreferredSize(new Dimension(50, 20));
+		
 		jPanel3.setMinimumSize(new Dimension(10, 10));
 		jPanel3.setPreferredSize(new Dimension(30, 10));
+		
 		jPanel4.setMinimumSize(new Dimension(10, 10));
 		jPanel4.setPreferredSize(new Dimension(10, 20));
+		
 		jPanel5.setMinimumSize(new Dimension(10, 10));
 		jPanel5.setPreferredSize(new Dimension(30, 10));
+		
 		this.getContentPane().add(jPanel1,BorderLayout.CENTER);
+		
 		jPanel1.add(jPanel6, BorderLayout.CENTER);
+		
 		jPanel6.add(jPanel7,null);
 		jPanel7.add(jLabel1, null);
 		jPanel7.add(txtShowWaiter, null);
@@ -97,9 +103,10 @@ public class DispWaiter extends JDialog {
     	txtShowWaiter.setPreferredSize(new Dimension(150, 30));
 		txtShowWaiter.setEditable(true);
 		txtShowWaiter.setText("");
+		
 		jPanel1.add(jPanel2, BorderLayout.EAST);
 		jPanel1.add(jPanel3, BorderLayout.SOUTH);
-		jPanel1.add(jPanel4, BorderLayout.WEST);
+		//jPanel1.add(jPanel4, BorderLayout.WEST);
 		jPanel1.add(jPanel5, BorderLayout.NORTH);
 	}
 	
@@ -220,7 +227,12 @@ public class DispWaiter extends JDialog {
 			permit = value;
 		}
 	}
-		
+
+	public static void main(String[] args)
+	{
+		DispWaiter form = new DispWaiter();
+		form.setVisible(true);
+	}
 		          
 }
 	

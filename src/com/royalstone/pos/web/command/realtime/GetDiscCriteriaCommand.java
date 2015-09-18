@@ -322,7 +322,7 @@ public class GetDiscCriteriaCommand implements ICommand {
 
 		String sql =
 			" SELECT vgno, promtype, promprice, "
-				+ " startdate, enddate, starttime, endtime "
+				+ " startdate, enddate, starttime, endtime, qflag, qty "
 				+ "FROM promotion where vgno=?; ";
 		PreparedStatement stmt = connection.prepareStatement(sql);
 		stmt.setString(1, code);
@@ -331,7 +331,8 @@ public class GetDiscCriteriaCommand implements ICommand {
 			String vgno = Formatter.mytrim(rs.getString("vgno"));
 			String promtype = Formatter.mytrim(rs.getString("promtype"));
 			double promprice = rs.getDouble("promprice");
-
+			String flag =  Formatter.mytrim(rs.getString("qflag"));
+			int qty =  rs.getInt("qty");
 			Date startdate = rs.getDate("startdate");
 			Date enddate = rs.getDate("enddate");
 			Date starttime = rs.getDate("starttime");
@@ -344,7 +345,7 @@ public class GetDiscCriteriaCommand implements ICommand {
 			g_end.setTime(endtime);
 
 			result =
-				new Promotion(vgno, (int) (100 * promprice), g_start, g_end);
+				new Promotion(vgno, (int) (100 * promprice), g_start, g_end,flag,qty);
 		}
 
 		return result;

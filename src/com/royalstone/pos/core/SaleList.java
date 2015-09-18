@@ -240,7 +240,7 @@ public class SaleList implements Serializable {
 				&& s.matches(g)
 				&& s.getDiscType() != Discount.ALTPRICE && s.getDiscType() != Discount.SINGLE 
 				&& s.getDiscType() != Discount.TOTAL && s.getDiscType() != Discount.MONEY
-				&& s.getDiscType() != Discount.LOANDISC)
+				&& s.getDiscType() != Discount.LOANDISC && s.getDiscType() != Discount.PROMOTION)
 				s.clearDiscount();
 		}
 	}

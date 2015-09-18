@@ -92,7 +92,7 @@ public class AboutDialog extends JDialog {
 		jPanel1.setDebugGraphicsOptions(0);
 		jPanel1.setLayout(gridLayout2);
 		jLabel1.setFont(new java.awt.Font("Dialog", 0, 14));
-		jLabel1.setText("Version: 4.1.2");
+		jLabel1.setText("Version: 4.1.7");
 		jLabel1.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
 		jLabel3.setFont(new java.awt.Font("Dialog", 0, 14));
 		jLabel3.setVerifyInputWhenFocusTarget(true);

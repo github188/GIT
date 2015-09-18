@@ -910,4 +910,77 @@ public class Sale implements Serializable {
 	private Day sysdate;
 
 	private long price_std;
+	
+	public String getBatch() {
+		return batch;
+	}
+
+	public void setBatch(String batch) {
+		this.batch = batch;
+	}
+
+	public String getYyyh() {
+		return yyyh;
+	}
+
+	public void setYyyh(String yyyh) {
+		this.yyyh = yyyh;
+	}
+
+	public String getCfly() {
+		return cfly;
+	}
+
+	public void setCfly(String cfly) {
+		this.cfly = cfly;
+	}
+
+	public String getCfshr() {
+		return cfshr;
+	}
+
+	public void setCfshr(String cfshr) {
+		this.cfshr = cfshr;
+	}
+
+	public String getCfdpr() {
+		return cfdpr;
+	}
+
+	public void setCfdpr(String cfdpr) {
+		this.cfdpr = cfdpr;
+	}
+
+	public String getCffhr() {
+		return cffhr;
+	}
+
+	public void setCffhr(String cffhr) {
+		this.cffhr = cffhr;
+	}
+
+	public String getGmsfz() {
+		return gmsfz;
+	}
+
+	public void setGmsfz(String gmsfz) {
+		this.gmsfz = gmsfz;
+	}
+
+	public boolean isLimit() {
+		return isLimit;
+	}
+
+	public void setLimit(boolean isLimit) {
+		this.isLimit = isLimit;
+	}
+
+	private String batch = "";//批次
+	private String yyyh = "";//营业员
+	private String cfly = "";//处方来源
+	private String cfshr = ""; //处方审核人
+	private String cfdpr = ""; //处方调配人
+	private String cffhr = ""; //处方复核人
+	private String gmsfz = ""; //购买人身份证
+	private boolean isLimit = false;
 }

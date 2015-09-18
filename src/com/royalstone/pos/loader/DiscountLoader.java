@@ -20,8 +20,8 @@ import com.royalstone.pos.web.command.DiscountCommand;
 /**
  * @author root
  *
- * To change the template for this generated type comment go to
- * Window&gt;Preferences&gt;Java&gt;Code Generation&gt;Code and Comments
+ *         To change the template for this generated type comment go to
+ *         Window&gt;Preferences&gt;Java&gt;Code Generation&gt;Code and Comments
  */
 public class DiscountLoader {
 
@@ -72,9 +72,7 @@ public class DiscountLoader {
 		} else {
 
 			results = discountCommand.excute(params);
-
 		}
-
 		if (results != null && results.length > 0) {
 			result = (Response) results[0];
 			DiscountList lst = (DiscountList) result.getObject();

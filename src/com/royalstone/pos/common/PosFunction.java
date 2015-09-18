@@ -52,9 +52,13 @@ final public class PosFunction
 		if(key==PayStock) return"PayStock";
 		if(key==Cure) return"Cure";
 		if(key==NumberDrug) return"NumberDrug";
+		if(key== PAY) return "PAY";
+		if(key== YYY) return "YYY";
 		return "UNDEFINED";
 	}
 	public final static int PAY 		= 14;
+	public final static int YYY 		= 15;
+
 	public final static int	RESERVE		= 100;		//
 	public final static int	ENTER		= 10;		// È·ÈÏ
 	public final static int	CANCEL		= 89;		// ·ÅÆú

@@ -116,13 +116,17 @@ public class PosJournal implements Serializable {
 			+ " amount, colorsize, item_value, disc_value, "
 			+ " item_type, disc_type, authorizer_id, x, price, use_goodsno, "
 			+ " trainflag, flag1, flag2, flag3, "
-			+ " v_type, sublistno,reqtime ) "
+			+ " v_type, sublistno,reqtime"
+			//+ " )"
+			+ " ,batch,yyyh,cfly,cfshr,cfdpr,cffhr,gmsfz)"
 			+ " VALUES ( ?, ?, ?, ?, ?, ?,"
 			+ " ?, ?, ?, ?, ?, "
 			+ " ?, ?, ?, ?, "
 			+ " ?, ?, ?, ?, ?, ?, "
 			+ " ?, ?, ?, ?, "
-			+ " ?, ?, ?  ) ; " ;
+			+ " ?, ?, ?"
+			//+ " );";
+			+ " ,?, ?, ?, ?, ?, ?, ?  ) ; " ;
 			//TODO 沧州富达 by fire  2005_5_11
 			return connection.prepareStatement( sql );
 	}
@@ -174,13 +178,17 @@ public class PosJournal implements Serializable {
 		pstmt.setString(25, onlineflag); 						// flag3
 		pstmt.setString(26, "0"); 								// v_type
 		pstmt.setInt(27, 1); 									// sublistno
-        pstmt.setString(28, reqTime); 									// sublistno
-//TODO 沧州富达 by fire  2005_5_11
-//		pstmt.setDate(27, new Date(dt.getTimeInMillis()));
-//		pstmt.setInt(28, shiftid);
+        pstmt.setString(28, reqTime); 							// sublistno
+       
+        pstmt.setString(29, rec.getBatch());
+        pstmt.setString(30, rec.getYyyh());
+        pstmt.setString(31, rec.getCfly());
+        pstmt.setString(32, rec.getCfshr());
+        pstmt.setString(33, rec.getCfdpr());
+        pstmt.setString(34, rec.getCffhr());
+        pstmt.setString(35, rec.getGmsfz());
+		
 		pstmt.addBatch();
-
-
 	}
 
 	/**	准备写入支付流水的SQL. 根据参数 duplicated 决定写入哪个表. 

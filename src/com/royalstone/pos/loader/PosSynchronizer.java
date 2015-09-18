@@ -61,6 +61,9 @@ public class PosSynchronizer {
             
             xloader.loadPayMode("promo/paymode.NEW.xml");
             rename("promo/paymode.NEW.xml", "promo/paymode.xml", "promo/paymode.BAK.xml");
+            
+            xloader.loadYYY("promo/YYY.NEW.xml");
+            rename("promo/YYY.NEW.xml", "promo/YYY.xml", "promo/YYY.BAK.xml");
 
         //------------------------
         //--------------------------

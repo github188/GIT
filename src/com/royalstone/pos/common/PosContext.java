@@ -551,6 +551,14 @@ public class PosContext implements Serializable {
 	public void setOnLine(boolean value) {
 		online = value;
 	}
+	
+	public String getYyy() {
+		return yyy;
+	}
+
+	public void setYyy(String yyy) {
+		this.yyy = yyy;
+	}
 
 	// 商品可剂数数值
 	public int drupnumber = 0;
@@ -590,6 +598,11 @@ public class PosContext implements Serializable {
 	 * Comment for <code>waiter_id</code>
 	 */
 	private String waiter_id = "";
+	
+	/**
+	 * Comment for <code>waiter_id</code>
+	 */
+	private String yyy = "";
 	/**
 	 * Comment for <code>authorizer_id</code>
 	 */

@@ -14,8 +14,8 @@ import com.royalstone.pos.web.util.DBConnection;
  */
 public class LookupPrecentageCommand implements ICommand {
 
-	private String errorMsg1;
-	private String errorMsg2;
+	private String errorMsg1 = null;
+	private String errorMsg2 = null;
 
 	/**
 	 * @see ICommand#excute(Object[])

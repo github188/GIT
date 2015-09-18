@@ -493,6 +493,28 @@ public class PosMinister {
 		}
 	}
 
+	public static YYYList getYYYList(Connection connection) {
+		System.err.println("getYYYList ...");
+		YYYList list = new YYYList();
+		try {
+			PreparedStatement pstmt =
+				connection.prepareStatement(
+					"SELECT id,name FROM saleman;");
+
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()) {
+				String id = rs.getString("id");
+				String name = rs.getString("name");
+				YYY yyy = new YYY(id, name);
+				list.add(yyy);
+			}
+			rs.close();
+			return list;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 	
 	public static PayModeList getPayModeList(Connection connection) {
 		System.err.println("getPayModeList ...");

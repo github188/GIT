@@ -244,6 +244,14 @@ class SheetElement extends Element {
 		addChild("trainflag", "" + sale.getTrainFlag());
 		addChild("sysdate", sale.getSysDate().toString());
 		addChild("systime", sale.getSysTime().toString());
+		
+		addChild("batch",sale.getBatch().toString());
+		addChild("yyyh",sale.getYyyh().toString());
+		addChild("cfly",sale.getCfly().toString());
+		addChild("cfshr",sale.getCfshr().toString());
+		addChild("cffhr",sale.getCffhr().toString());
+		addChild("cfdpr",sale.getCfdpr().toString());
+		addChild("gmsfz",sale.getGmsfz().toString());
 	}
 
 	public SheetElement(Sale sale, String flag) {
@@ -270,6 +278,14 @@ class SheetElement extends Element {
 		addChild("trainflag", "" + sale.getTrainFlag());
 		addChild("sysdate", sale.getSysDate().toString());
 		addChild("systime", sale.getSysTime().toString());
+		
+		addChild("batch",sale.getBatch().toString());
+		addChild("yyyh",sale.getYyyh().toString());
+		addChild("cfly",sale.getCfly().toString());
+		addChild("cfshr",sale.getCfshr().toString());
+		addChild("cffhr",sale.getCffhr().toString());
+		addChild("cfdpr",sale.getCfdpr().toString());
+		addChild("gmsfz",sale.getGmsfz().toString());
 	}
 
 	private void addChild(String name, String str) {

@@ -2251,7 +2251,6 @@ class PosShell {
 						return;
 					}
 				}
-
 			}
 
 			Sale s;

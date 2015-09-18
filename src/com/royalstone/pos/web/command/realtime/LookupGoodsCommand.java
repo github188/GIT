@@ -181,15 +181,23 @@ public class LookupGoodsCommand implements ICommand {
 		if(rsnew.next()){
 			//判断数量
 			String limitnumnew = Formatter.mytrim(rsnew.getString("limitnum"));
-		    if(Integer.valueOf(limitnumnew)>=code.getSaleAmount())
+		    
+			/*
+			if(Integer.valueOf(limitnumnew) >= code.getSaleAmount())
 		    {
 		    	result = new Goods("1");
-		    }else{
-		    	result = new Goods("9");;  /*有限购传NULL对象*/
 		    }
+		    else
+		    {
+		    	result = new Goods("9");  /*有限购传NULL对象
+		    }
+			*/
 			
-		}else{
-			result = new Goods("0");
+			result = new Goods(limitnumnew);
+		}
+		else
+		{
+			result = new Goods("NoLimit");
 		}
 		rsnew.close();
     }

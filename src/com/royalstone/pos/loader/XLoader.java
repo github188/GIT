@@ -307,6 +307,18 @@ public class XLoader {
 			new PayModeLoader().download2Xml(file);
 		}
 	}
+	
+	public void loadYYY(String file) throws JDOMException, IOException {
+		
+		if(pos.hasServer){
+
+			String url = "http://" + host + ":" + port + "/pos41/YYY";
+			loadXMLDoc(file, url);
+		}else{
+			new YYYLoader().download2Xml(file);
+		}
+	}
+	
 
 	public void loadXMLDoc(String file, String url)
 		throws JDOMException, IOException {

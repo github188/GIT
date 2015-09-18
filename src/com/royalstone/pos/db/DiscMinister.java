@@ -243,7 +243,7 @@ public class DiscMinister
 	public void getPromotion( Connection connection )
 	{
 		String sql = " SELECT vgno, promtype, promprice, "
-					+ " startdate, enddate, starttime, endtime "
+					+ " startdate, enddate, starttime, endtime,qflag, qty  "
 					+ "FROM promotion; ";
 
 		try {
@@ -253,6 +253,8 @@ public class DiscMinister
 				String 	vgno 	   = rs.getString( "vgno" );
 				String 	promtype   = rs.getString( "promtype" );
 				double 	promprice  = rs.getDouble( "promprice" );
+				String flag = rs.getString("qflag");
+				int qty = rs.getInt("qty");
 
 				Date	startdate  = rs.getDate( "startdate" );	
 				Date	enddate    = rs.getDate( "enddate" );	
@@ -265,7 +267,7 @@ public class DiscMinister
 				GregorianCalendar g_end = new GregorianCalendar();
 				g_end.setTime(endtime);
 
-				lst.add( new Promotion( vgno, (int) (100*promprice), g_start, g_end ) );
+				lst.add( new Promotion( vgno, (int) (100*promprice), g_start, g_end,flag,qty) );
 //				System.out.println( "PROMOTION: " + vgno + " " + promtype + " " + promprice + " " + startdate + " " + enddate );
 			}
 		} catch (SQLException e) {
